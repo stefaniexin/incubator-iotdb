@@ -36,7 +36,7 @@ public class HashMapInstrumentor {
     reportTimer = new Thread(() -> {
       while (true) {
         try {
-          Thread.sleep(60*1000);
+          Thread.sleep(5*60*1000L);
         } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
           return;
