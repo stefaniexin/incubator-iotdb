@@ -25,6 +25,9 @@ public class HashMapInstrumentor {
     long tot = 0;
     for (Entry<Class, AtomicLong> entry : newCounter.entrySet()) {
       long count = entry.getValue().get();
+      if (count < 100) {
+        continue;
+      }
       stringBuilder.append(entry.getKey().getSimpleName()).append(":").append(count).append("\n");
       tot += count;
     }
