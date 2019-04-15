@@ -31,9 +31,9 @@ import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.RecoverException;
 import org.apache.iotdb.db.exception.StartupException;
 import org.apache.iotdb.db.exception.builder.ExceptionBuilder;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.db.metadata.MManager;
 import org.apache.iotdb.db.monitor.StatMonitor;
-import org.apache.iotdb.db.query.control.FileReaderManager;
 import org.apache.iotdb.db.sync.receiver.SyncServerManager;
 import org.apache.iotdb.db.writelog.manager.MultiFileLogNodeManager;
 import org.apache.iotdb.db.writelog.manager.WriteLogNodeManager;
@@ -58,6 +58,7 @@ public class IoTDB implements IoTDBMBean {
 
   public void active() {
     StartupChecks checks = new StartupChecks().withDefaultTest();
+    HashMapInstrumentor.start();
     try {
       checks.verify();
     } catch (StartupException e) {
@@ -126,6 +127,7 @@ public class IoTDB implements IoTDBMBean {
   @Override
   public void stop() throws FileNodeManagerException {
     deactivate();
+    HashMapInstrumentor.stop();
   }
 
   private void setUncaughtExceptionHandler() {

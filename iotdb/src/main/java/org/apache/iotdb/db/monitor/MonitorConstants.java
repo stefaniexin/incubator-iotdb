@@ -26,6 +26,7 @@ import org.apache.iotdb.db.conf.IoTDBConfig;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.monitor.collector.FileSize;
 import org.apache.iotdb.db.service.Monitor;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 
 public class MonitorConstants {
 
@@ -57,6 +58,7 @@ public class MonitorConstants {
    */
   static HashMap<String, AtomicLong> initValues(String constantsType) {
     HashMap<String, AtomicLong> hashMap = new HashMap<>();
+    HashMapInstrumentor.incCount(Monitor.class);
     switch (constantsType) {
       case FILENODE_PROCESSOR_CONST:
         for (FileNodeProcessorStatConstants statConstant : FileNodeProcessorStatConstants

@@ -171,6 +171,7 @@ public class PhysicalOptimizer {
 
   private Map<String, Set<String>> mergeColumns(List<FilterOperator> columnFilterOperators) {
     Map<String, Set<String>> column_values_map = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
     for (FilterOperator filterOperator : columnFilterOperators) {
       Pair<String, Set<String>> column_values = mergeColumn(filterOperator);
       if (column_values != null && !column_values.right.isEmpty()) {

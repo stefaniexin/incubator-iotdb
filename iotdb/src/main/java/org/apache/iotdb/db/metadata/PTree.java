@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import org.apache.iotdb.db.exception.PathErrorException;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 
 /**
  * "PTree" is the shorthand for "Property Tree". One {@code PTree} consists several {@code PNode}
@@ -162,6 +163,7 @@ public class PTree implements Serializable {
     String[] nodes = path.trim().split("\\.");
     PNode leaf = getLeaf(getRoot(), nodes, 0);
     HashMap<String, ArrayList<String>> res = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
 
     for (String MPath : leaf.getLinkedMTreePathMap().keySet()) {
       HashMap<String, ArrayList<String>> tr = getmTree().getAllPath(MPath);

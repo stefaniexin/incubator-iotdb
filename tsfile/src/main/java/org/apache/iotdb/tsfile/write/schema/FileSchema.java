@@ -23,6 +23,7 @@ import java.util.Map;
 
 import com.alibaba.fastjson.JSONObject;
 import org.apache.iotdb.tsfile.exception.write.InvalidJsonSchemaException;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 
 /**
@@ -45,6 +46,7 @@ public class FileSchema {
    */
   public FileSchema() {
     this.measurementSchema = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
   }
 
   /**

@@ -41,6 +41,7 @@ import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.utils.RandomDeleteCache;
 import org.apache.iotdb.tsfile.common.conf.TSFileConfig;
 import org.apache.iotdb.tsfile.exception.cache.CacheException;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSEncoding;
@@ -195,6 +196,7 @@ public class MManager {
         if (args.length > 5) {
           String[] kv = new String[2];
           props = new HashMap<>(args.length - 5 + 1, 1);
+          HashMapInstrumentor.incCount(this.getClass());
           leftArgs = new String[args.length - 5];
           for (int k = 5; k < args.length; k++) {
             kv = args[k].split("=");

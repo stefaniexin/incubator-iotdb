@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.iotdb.tsfile.exception.write.NoMeasurementException;
 import org.apache.iotdb.tsfile.exception.write.WriteProcessException;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.file.footer.ChunkGroupFooter;
 import org.apache.iotdb.tsfile.write.record.datapoint.DataPoint;
 import org.apache.iotdb.tsfile.write.schema.MeasurementSchema;
@@ -47,6 +48,7 @@ public class ChunkGroupWriterImpl implements IChunkGroupWriter {
 
   public ChunkGroupWriterImpl(String deviceId) {
     this.deviceId = deviceId;
+    HashMapInstrumentor.incCount(this.getClass());
   }
 
   @Override

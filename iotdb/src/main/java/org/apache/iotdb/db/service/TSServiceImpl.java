@@ -80,6 +80,7 @@ import org.apache.iotdb.service.rpc.thrift.TS_SessionHandle;
 import org.apache.iotdb.service.rpc.thrift.TS_Status;
 import org.apache.iotdb.service.rpc.thrift.TS_StatusCode;
 import org.apache.iotdb.tsfile.exception.filter.QueryFilterOptimizationException;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.read.common.Path;
 import org.apache.iotdb.tsfile.read.query.dataset.QueryDataSet;
 import org.apache.thrift.TException;
@@ -155,6 +156,9 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
   private void initForOneSession() {
     queryStatus.set(new HashMap<>());
     queryRet.set(new HashMap<>());
+    HashMapInstrumentor.incCount(this.getClass());
+    HashMapInstrumentor.incCount(this.getClass());
+
   }
 
   @Override

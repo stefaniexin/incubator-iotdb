@@ -22,6 +22,7 @@ package org.apache.iotdb.db.engine.memtable;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 
 public class PrimitiveMemTable extends AbstractMemTable {
@@ -41,6 +42,7 @@ public class PrimitiveMemTable extends AbstractMemTable {
   @Override
   public IMemTable copy() {
     Map<String, Map<String, IWritableMemChunk>> newMap = new HashMap<>(getMemTableMap());
+    HashMapInstrumentor.incCount(this.getClass());
 
     return new PrimitiveMemTable(newMap);
   }

@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.iotdb.tsfile.exception.encoding.TsFileDecodingException;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSEncoding;
 import org.apache.iotdb.tsfile.utils.Binary;
 import org.apache.iotdb.tsfile.utils.Pair;
@@ -142,6 +143,7 @@ public class BitmapDecoder extends Decoder {
     }
     if (this.buffer == null) {
       this.buffer = new HashMap<>();
+      HashMapInstrumentor.incCount(this.getClass());
     } else {
       this.buffer.clear();
     }

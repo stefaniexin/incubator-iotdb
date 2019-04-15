@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.iotdb.db.exception.MetadataArgsErrorException;
 import org.apache.iotdb.db.exception.PathErrorException;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSEncoding;
@@ -45,6 +46,7 @@ public class MGraph implements Serializable {
   public MGraph(String mtreeName) {
     mtree = new MTree(mtreeName);
     ptreeMap = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
   }
 
   /**
@@ -205,6 +207,7 @@ public class MGraph implements Serializable {
    */
   public Map<String, List<MeasurementSchema>> getSchemaForAllType() throws PathErrorException {
     Map<String, List<MeasurementSchema>> res = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
     List<String> typeList = mtree.getAllType();
     for (String type : typeList) {
       res.put(type, getSchemaForOneType("root." + type));
@@ -221,6 +224,7 @@ public class MGraph implements Serializable {
    */
   public Map<String, List<String>> getDeviceForAllType() throws PathErrorException {
     Map<String, List<String>> res = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
     ArrayList<String> types = mtree.getAllType();
     for (String type : types) {
       res.put(type, getDeviceForOneType(type));

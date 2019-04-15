@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.iotdb.db.engine.modification.Modification;
 import org.apache.iotdb.db.engine.modification.ModificationFile;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 
 /**
  * QueryContext contains the shared information with in a query.
@@ -47,6 +48,8 @@ public class QueryContext {
   private long jobId;
 
   public QueryContext() {
+    HashMapInstrumentor.incCount(this.getClass());
+    HashMapInstrumentor.incCount(this.getClass());
   }
 
   public QueryContext(long jobId) {
@@ -61,7 +64,10 @@ public class QueryContext {
       throws IOException {
 
     Map<String, List<Modification>> fileModifications =
-        filePathModCache.computeIfAbsent(modFile.getFilePath(), k -> new HashMap<>());
+        filePathModCache.computeIfAbsent(modFile.getFilePath(), k -> {
+          HashMapInstrumentor.incCount(QueryContext.class);
+          return new HashMap<>();
+        });
     List<Modification> pathModifications = fileModifications.get(path);
 
     if (pathModifications == null) {

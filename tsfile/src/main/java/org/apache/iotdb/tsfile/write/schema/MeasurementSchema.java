@@ -33,6 +33,7 @@ import org.apache.iotdb.tsfile.compress.ICompressor;
 import org.apache.iotdb.tsfile.encoding.encoder.Encoder;
 import org.apache.iotdb.tsfile.encoding.encoder.TSEncodingBuilder;
 import org.apache.iotdb.tsfile.exception.write.UnSupportedDataTypeException;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSEncoding;
@@ -60,6 +61,7 @@ public class MeasurementSchema implements Comparable<MeasurementSchema>, Seriali
   private Map<String, String> props = new HashMap<>();
 
   public MeasurementSchema() {
+    HashMapInstrumentor.incCount(this.getClass());
   }
 
   /**
@@ -108,6 +110,7 @@ public class MeasurementSchema implements Comparable<MeasurementSchema>, Seriali
     int size = ReadWriteIOUtils.readInt(inputStream);
     if (size > 0) {
       measurementSchema.props = new HashMap<>();
+      HashMapInstrumentor.incCount(MeasurementSchema.class);
       String key;
       String value;
       for (int i = 0; i < size; i++) {
@@ -137,6 +140,7 @@ public class MeasurementSchema implements Comparable<MeasurementSchema>, Seriali
     int size = ReadWriteIOUtils.readInt(buffer);
     if (size > 0) {
       measurementSchema.props = new HashMap<>();
+      HashMapInstrumentor.incCount(MeasurementSchema.class);
       String key;
       String value;
       for (int i = 0; i < size; i++) {

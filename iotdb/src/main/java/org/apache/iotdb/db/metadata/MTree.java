@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.tsfile.common.conf.TSFileConfig;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSEncoding;
@@ -710,6 +711,7 @@ public class MTree implements Serializable {
    */
   public HashMap<String, ArrayList<String>> getAllPath(String pathReg) throws PathErrorException {
     HashMap<String, ArrayList<String>> paths = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
     String[] nodes = pathReg.split(DOUB_SEPARATOR);
     if (nodes.length == 0 || !nodes[0].equals(getRoot().getName())) {
       throw new PathErrorException(String.format(SERIES_NOT_CORRECT, pathReg));
@@ -838,6 +840,7 @@ public class MTree implements Serializable {
     String path = getRoot().getName() + "." + type;
     checkPath(path);
     HashMap<String, Integer> deviceMap = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
     MNode typeNode = getRoot().getChild(type);
     putDeviceToMap(getRoot().getName(), typeNode, deviceMap);
     ArrayList<String> res = new ArrayList<>();

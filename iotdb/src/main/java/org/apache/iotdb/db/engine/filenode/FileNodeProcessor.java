@@ -86,6 +86,7 @@ import org.apache.iotdb.db.utils.QueryUtils;
 import org.apache.iotdb.db.utils.TimeValuePair;
 import org.apache.iotdb.tsfile.common.conf.TSFileConfig;
 import org.apache.iotdb.tsfile.exception.write.WriteProcessException;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.file.footer.ChunkGroupFooter;
 import org.apache.iotdb.tsfile.file.metadata.ChunkMetaData;
 import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType;
@@ -161,6 +162,8 @@ public class FileNodeProcessor extends Processor implements IStatistic {
     synchronized (fileNodeProcessorStore) {
       // deep copy
       Map<String, Long> tempLastUpdateMap = new HashMap<>(lastUpdateTimeMap);
+      HashMapInstrumentor.incCount(this.getClass());
+
       // update flushLastUpdateTimeMap
       for (Entry<String, Long> entry : lastUpdateTimeMap.entrySet()) {
         flushLastUpdateTimeMap.put(entry.getKey(), entry.getValue() + 1);
@@ -185,6 +188,8 @@ public class FileNodeProcessor extends Processor implements IStatistic {
       if (!newFileNodes.isEmpty()) {
         // end time with one start time
         Map<String, Long> endTimeMap = new HashMap<>();
+        HashMapInstrumentor.incCount(this.getClass());
+
         for (Entry<String, Long> startTime : currentTsFileResource.getStartTimeMap().entrySet()) {
           String deviceId = startTime.getKey();
           endTimeMap.put(deviceId, lastUpdateTimeMap.get(deviceId));
@@ -226,6 +231,7 @@ public class FileNodeProcessor extends Processor implements IStatistic {
   FileNodeProcessor(String fileNodeDirPath, String processorName)
       throws FileNodeProcessorException {
     super(processorName);
+    HashMapInstrumentor.incCount(this.getClass());
     for (MonitorConstants.FileNodeProcessorStatConstants statConstant :
         MonitorConstants.FileNodeProcessorStatConstants.values()) {
       statParamsHashMap.put(statConstant.name(), new AtomicLong(0));
@@ -236,6 +242,8 @@ public class FileNodeProcessor extends Processor implements IStatistic {
             + processorName.replaceAll("\\.", "_");
 
     this.parameters = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
+
     String dirPath = fileNodeDirPath;
     if (dirPath.length() > 0
         && dirPath.charAt(dirPath.length() - 1) != File.separatorChar) {
@@ -267,8 +275,12 @@ public class FileNodeProcessor extends Processor implements IStatistic {
     isMerging = fileNodeProcessorStore.getFileNodeProcessorStatus();
     numOfMergeFile = fileNodeProcessorStore.getNumOfMergeFile();
     invertedIndexOfFiles = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
+
     // deep clone
     flushLastUpdateTimeMap = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
+
     for (Entry<String, Long> entry : lastUpdateTimeMap.entrySet()) {
       flushLastUpdateTimeMap.put(entry.getKey(), entry.getValue() + 1);
     }
@@ -307,6 +319,8 @@ public class FileNodeProcessor extends Processor implements IStatistic {
   @Override
   public void registerStatMetadata() {
     Map<String, String> hashMap = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
+
     for (MonitorConstants.FileNodeProcessorStatConstants statConstant :
         MonitorConstants.FileNodeProcessorStatConstants.values()) {
       hashMap
@@ -331,6 +345,8 @@ public class FileNodeProcessor extends Processor implements IStatistic {
   public Map<String, TSRecord> getAllStatisticsValue() {
     Long curTime = System.currentTimeMillis();
     HashMap<String, TSRecord> tsRecordHashMap = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
+
     TSRecord tsRecord = new TSRecord(curTime, statStorageDeltaName);
 
     Map<String, AtomicLong> hashMap = getStatParamsHashMap();
@@ -521,6 +537,8 @@ public class FileNodeProcessor extends Processor implements IStatistic {
       throws FileNodeProcessorException {
     if (bufferWriteProcessor == null) {
       Map<String, Action> params = new HashMap<>();
+      HashMapInstrumentor.incCount(this.getClass());
+
       params.put(FileNodeConstants.BUFFERWRITE_FLUSH_ACTION, bufferwriteFlushAction);
       params.put(FileNodeConstants.BUFFERWRITE_CLOSE_ACTION, bufferwriteCloseAction);
       params
@@ -559,6 +577,8 @@ public class FileNodeProcessor extends Processor implements IStatistic {
   public OverflowProcessor getOverflowProcessor(String processorName) throws IOException {
     if (overflowProcessor == null) {
       Map<String, Action> params = new HashMap<>();
+      HashMapInstrumentor.incCount(this.getClass());
+
       // construct processor or restore
       params.put(FileNodeConstants.OVERFLOW_FLUSH_ACTION, overflowFlushAction);
       params

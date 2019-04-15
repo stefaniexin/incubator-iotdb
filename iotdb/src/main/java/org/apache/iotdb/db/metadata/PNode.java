@@ -22,6 +22,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import org.apache.iotdb.db.exception.PathErrorException;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 
 /**
  * PNode is the shorthand for "Property Node", which make up The {@code PTree}
@@ -45,6 +46,7 @@ public class PNode implements Serializable {
     this.isLeaf = isLeaf;
     if (!isLeaf) {
       setChildren(new HashMap<>());
+      HashMapInstrumentor.incCount(this.getClass());
     } else {
       linkedMTreePathMap = new LinkedHashMap<>();
     }

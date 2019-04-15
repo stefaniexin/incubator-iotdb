@@ -41,6 +41,7 @@ import org.apache.iotdb.db.query.context.QueryContext;
 import org.apache.iotdb.db.query.control.FileReaderManager;
 import org.apache.iotdb.db.utils.MemUtils;
 import org.apache.iotdb.db.utils.QueryUtils;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.file.metadata.ChunkGroupMetaData;
 import org.apache.iotdb.tsfile.file.metadata.ChunkMetaData;
 import org.apache.iotdb.tsfile.file.metadata.TsDeviceMetadata;
@@ -75,6 +76,7 @@ public class OverflowResource {
   public OverflowResource(String parentPath, String dataPath, VersionController versionController)
       throws IOException {
     this.insertMetadatas = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
     this.appendInsertMetadatas = new ArrayList<>();
     this.parentPath = parentPath;
     this.dataPath = dataPath;
@@ -169,6 +171,7 @@ public class OverflowResource {
         String deviceId = rowGroupMetaData.getDeviceID();
         if (!insertMetadatas.containsKey(deviceId)) {
           insertMetadatas.put(deviceId, new HashMap<>());
+          HashMapInstrumentor.incCount(this.getClass());
         }
         for (ChunkMetaData chunkMetaData : rowGroupMetaData.getChunkMetaDataList()) {
           chunkMetaData.setVersion(rowGroupMetaData.getVersion());
@@ -303,6 +306,7 @@ public class OverflowResource {
                                  ChunkMetaData chunkMetaData) {
     if (!insertMetadatas.containsKey(deviceId)) {
       insertMetadatas.put(deviceId, new HashMap<>());
+      HashMapInstrumentor.incCount(this.getClass());
     }
     if (!insertMetadatas.get(deviceId).containsKey(measurementId)) {
       insertMetadatas.get(deviceId).put(measurementId, new ArrayList<>());

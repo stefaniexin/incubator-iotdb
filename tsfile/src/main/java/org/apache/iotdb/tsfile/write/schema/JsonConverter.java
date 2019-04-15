@@ -27,6 +27,7 @@ import org.apache.iotdb.tsfile.common.conf.TSFileConfig;
 import org.apache.iotdb.tsfile.common.constant.JsonFormatConstant;
 import org.apache.iotdb.tsfile.encoding.encoder.TSEncodingBuilder;
 import org.apache.iotdb.tsfile.exception.write.InvalidJsonSchemaException;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSEncoding;
@@ -85,6 +86,7 @@ public class JsonConverter {
       JSONObject jsonSchema)
       throws InvalidJsonSchemaException {
     Map<String, MeasurementSchema> result = new HashMap<>();
+    HashMapInstrumentor.incCount(JsonConverter.class);
     if (!jsonSchema.containsKey(JsonFormatConstant.JSON_SCHEMA)) {
       throw new InvalidJsonSchemaException("missing fields:" + JsonFormatConstant.JSON_SCHEMA);
     }
@@ -135,6 +137,7 @@ public class JsonConverter {
         : CompressionType.valueOf(TSFileConfig.compressor);
     // all information of one series
     Map<String, String> props = new HashMap<>();
+    HashMapInstrumentor.incCount(JsonConverter.class);
     for (Object key : measurementObj.keySet()) {
       if (key.equals(JsonFormatConstant.MEASUREMENT_ENCODING) || key
           .equals(JsonFormatConstant.COMPRESS_TYPE)

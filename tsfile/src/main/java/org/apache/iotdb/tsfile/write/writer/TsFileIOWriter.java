@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.apache.iotdb.tsfile.common.conf.TSFileConfig;
 import org.apache.iotdb.tsfile.common.constant.StatisticConstant;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.file.MetaMarker;
 import org.apache.iotdb.tsfile.file.footer.ChunkGroupFooter;
 import org.apache.iotdb.tsfile.file.header.ChunkHeader;
@@ -160,6 +161,7 @@ public class TsFileIOWriter {
     LOG.debug("finish series chunk:{} header, file position {}", header, out.getPosition());
 
     Map<String, ByteBuffer> statisticsMap = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
     // TODO add your statistics
     statisticsMap.put(StatisticConstant.MAX_VALUE, ByteBuffer.wrap(statistics.getMaxBytes()));
     statisticsMap.put(StatisticConstant.MIN_VALUE, ByteBuffer.wrap(statistics.getMinBytes()));
@@ -253,6 +255,7 @@ public class TsFileIOWriter {
       List<ChunkGroupMetaData> chunkGroupMetaDataList) throws IOException {
 
     Map<String, TsDeviceMetadataIndex> tsDeviceMetadataIndexMap = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
 
     long offset; /* offset for the flushing TsDeviceMetadata */
 

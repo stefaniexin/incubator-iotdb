@@ -25,6 +25,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.utils.ReadWriteIOUtils;
 import org.apache.iotdb.tsfile.write.schema.MeasurementSchema;
@@ -53,6 +54,8 @@ public class TsFileMetaData {
   private String createdBy;
 
   public TsFileMetaData() {
+    HashMapInstrumentor.incCount(this.getClass());
+    HashMapInstrumentor.incCount(this.getClass());
     //do nothing
   }
 
@@ -81,6 +84,7 @@ public class TsFileMetaData {
     int size = ReadWriteIOUtils.readInt(inputStream);
     if (size > 0) {
       Map<String, TsDeviceMetadataIndex> deviceMap = new HashMap<>();
+      HashMapInstrumentor.incCount(TsFileMetaData.class);
       String key;
       TsDeviceMetadataIndex value;
       for (int i = 0; i < size; i++) {
@@ -94,6 +98,7 @@ public class TsFileMetaData {
     size = ReadWriteIOUtils.readInt(inputStream);
     if (size > 0) {
       fileMetaData.measurementSchema = new HashMap<>();
+      HashMapInstrumentor.incCount(TsFileMetaData.class);
       String key;
       MeasurementSchema value;
       for (int i = 0; i < size; i++) {
@@ -124,6 +129,7 @@ public class TsFileMetaData {
     int size = ReadWriteIOUtils.readInt(buffer);
     if (size > 0) {
       Map<String, TsDeviceMetadataIndex> deviceMap = new HashMap<>();
+      HashMapInstrumentor.incCount(TsFileMetaData.class);
       String key;
       TsDeviceMetadataIndex value;
       for (int i = 0; i < size; i++) {
@@ -137,6 +143,7 @@ public class TsFileMetaData {
     size = ReadWriteIOUtils.readInt(buffer);
     if (size > 0) {
       fileMetaData.measurementSchema = new HashMap<>();
+      HashMapInstrumentor.incCount(TsFileMetaData.class);
       String key;
       MeasurementSchema value;
       for (int i = 0; i < size; i++) {

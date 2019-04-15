@@ -28,6 +28,7 @@ import org.apache.iotdb.tsfile.common.conf.TSFileConfig;
 import org.apache.iotdb.tsfile.common.conf.TSFileDescriptor;
 import org.apache.iotdb.tsfile.exception.write.NoMeasurementException;
 import org.apache.iotdb.tsfile.exception.write.WriteProcessException;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.file.footer.ChunkGroupFooter;
 import org.apache.iotdb.tsfile.write.chunk.ChunkGroupWriterImpl;
 import org.apache.iotdb.tsfile.write.chunk.IChunkGroupWriter;
@@ -86,6 +87,7 @@ public class TsFileWriter {
    */
   public TsFileWriter(File file) throws IOException {
     this(new TsFileIOWriter(file), new FileSchema(), TSFileDescriptor.getInstance().getConfig());
+    HashMapInstrumentor.incCount(this.getClass());
   }
 
   /**
@@ -95,6 +97,7 @@ public class TsFileWriter {
    */
   public TsFileWriter(TsFileIOWriter fileWriter) throws IOException {
     this(fileWriter, new FileSchema(), TSFileDescriptor.getInstance().getConfig());
+    HashMapInstrumentor.incCount(this.getClass());
   }
 
   /**
@@ -105,6 +108,7 @@ public class TsFileWriter {
    */
   public TsFileWriter(File file, FileSchema schema) throws IOException {
     this(new TsFileIOWriter(file), schema, TSFileDescriptor.getInstance().getConfig());
+    HashMapInstrumentor.incCount(this.getClass());
   }
 
   /**
@@ -115,6 +119,7 @@ public class TsFileWriter {
    */
   public TsFileWriter(File file, TSFileConfig conf) throws IOException {
     this(new TsFileIOWriter(file), new FileSchema(), conf);
+    HashMapInstrumentor.incCount(this.getClass());
   }
 
   /**
@@ -126,6 +131,7 @@ public class TsFileWriter {
    */
   public TsFileWriter(File file, FileSchema schema, TSFileConfig conf) throws IOException {
     this(new TsFileIOWriter(file), schema, conf);
+    HashMapInstrumentor.incCount(this.getClass());
   }
 
   /**
@@ -151,6 +157,7 @@ public class TsFileWriter {
           "TsFile's page size {} is greater than chunk group size {}, please enlarge the chunk group"
               + " size or decrease page size. ", pageSize, chunkGroupSizeThreshold);
     }
+    HashMapInstrumentor.incCount(this.getClass());
   }
 
   /**

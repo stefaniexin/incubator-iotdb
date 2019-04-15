@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.utils.ReadWriteIOUtils;
 
 /**
@@ -95,6 +96,7 @@ public class FileNodeProcessorStore implements Serializable {
   public static FileNodeProcessorStore deSerialize(InputStream inputStream) throws IOException {
     boolean isOverflowed = ReadWriteIOUtils.readBool(inputStream);
     Map<String, Long> lastUpdateTimeMap = new HashMap<>();
+    HashMapInstrumentor.incCount(FileNodeProcessorStore.class);
     int size = ReadWriteIOUtils.readInt(inputStream);
     for (int i = 0; i < size; i++) {
       String path = ReadWriteIOUtils.readString(inputStream);
@@ -132,6 +134,7 @@ public class FileNodeProcessorStore implements Serializable {
   }
 
   public Map<String, Long> getLastUpdateTimeMap() {
+    HashMapInstrumentor.incCount(this.getClass());
     return new HashMap<>(lastUpdateTimeMap);
   }
 

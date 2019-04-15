@@ -22,6 +22,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSEncoding;
@@ -83,6 +84,8 @@ public class MNode implements Serializable {
     if (b) {
       schemaMap = new HashMap<>();
       numSchemaMap = new HashMap<>();
+      HashMapInstrumentor.incCount(this.getClass());
+      HashMapInstrumentor.incCount(this.getClass());
     } else {
       numSchemaMap = null;
       schemaMap = null;

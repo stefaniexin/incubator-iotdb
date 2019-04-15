@@ -26,6 +26,7 @@ import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.utils.ReadWriteIOUtils;
 
 /**
@@ -67,6 +68,7 @@ public class TsDigest {
     int size = ReadWriteIOUtils.readInt(inputStream);
     if (size > 0) {
       Map<String, ByteBuffer> statistics = new HashMap<>();
+      HashMapInstrumentor.incCount(TsDigest.class);
       String key;
       ByteBuffer value;
       for (int i = 0; i < size; i++) {
@@ -92,6 +94,7 @@ public class TsDigest {
     int size = ReadWriteIOUtils.readInt(buffer);
     if (size > 0) {
       Map<String, ByteBuffer> statistics = new HashMap<>();
+      HashMapInstrumentor.incCount(TsDigest.class);
       String key;
       ByteBuffer value;
       for (int i = 0; i < size; i++) {
@@ -144,6 +147,7 @@ public class TsDigest {
   public void addStatistics(String key, ByteBuffer value) {
     if (statistics == null) {
       statistics = new HashMap<>();
+      HashMapInstrumentor.incCount(this.getClass());
     }
     statistics.put(key, value);
     serializedSize += Integer.BYTES + key.length() + Integer.BYTES + value.remaining();
