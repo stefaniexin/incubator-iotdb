@@ -43,6 +43,7 @@ import org.apache.iotdb.db.monitor.collector.FileSize;
 import org.apache.iotdb.db.service.IService;
 import org.apache.iotdb.db.service.ServiceType;
 import org.apache.iotdb.tsfile.common.conf.TSFileConfig;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSEncoding;
@@ -254,6 +255,7 @@ public class StatMonitor implements IService {
     synchronized (statisticMap) {
       long currentTimeMillis = System.currentTimeMillis();
       HashMap<String, TSRecord> tsRecordHashMap = new HashMap<>();
+      HashMapInstrumentor.incCount(this.getClass());
       for (Map.Entry<String, IStatistic> entry : statisticMap.entrySet()) {
         if (entry.getValue() == null) {
           switch (entry.getKey()) {

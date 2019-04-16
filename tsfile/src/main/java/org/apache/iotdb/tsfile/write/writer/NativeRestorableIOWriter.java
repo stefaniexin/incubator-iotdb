@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.iotdb.tsfile.common.conf.TSFileConfig;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.read.TsFileCheckStatus;
 import org.apache.iotdb.tsfile.read.TsFileSequenceReader;
 import org.apache.iotdb.tsfile.write.schema.MeasurementSchema;
@@ -56,6 +57,7 @@ public class NativeRestorableIOWriter extends TsFileIOWriter {
    */
   public NativeRestorableIOWriter(File file, boolean append) throws IOException {
     super();
+    HashMapInstrumentor.incCount(this.getClass());
     this.out = new DefaultTsFileOutput(file, true);
     if (file.length() == 0) {
       //this is a new file

@@ -87,7 +87,6 @@ public class TsFileWriter {
    */
   public TsFileWriter(File file) throws IOException {
     this(new TsFileIOWriter(file), new FileSchema(), TSFileDescriptor.getInstance().getConfig());
-    HashMapInstrumentor.incCount(this.getClass());
   }
 
   /**
@@ -97,7 +96,6 @@ public class TsFileWriter {
    */
   public TsFileWriter(TsFileIOWriter fileWriter) throws IOException {
     this(fileWriter, new FileSchema(), TSFileDescriptor.getInstance().getConfig());
-    HashMapInstrumentor.incCount(this.getClass());
   }
 
   /**
@@ -108,7 +106,6 @@ public class TsFileWriter {
    */
   public TsFileWriter(File file, FileSchema schema) throws IOException {
     this(new TsFileIOWriter(file), schema, TSFileDescriptor.getInstance().getConfig());
-    HashMapInstrumentor.incCount(this.getClass());
   }
 
   /**
@@ -119,7 +116,6 @@ public class TsFileWriter {
    */
   public TsFileWriter(File file, TSFileConfig conf) throws IOException {
     this(new TsFileIOWriter(file), new FileSchema(), conf);
-    HashMapInstrumentor.incCount(this.getClass());
   }
 
   /**
@@ -131,7 +127,6 @@ public class TsFileWriter {
    */
   public TsFileWriter(File file, FileSchema schema, TSFileConfig conf) throws IOException {
     this(new TsFileIOWriter(file), schema, conf);
-    HashMapInstrumentor.incCount(this.getClass());
   }
 
   /**

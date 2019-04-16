@@ -29,6 +29,7 @@ import java.util.TreeMap;
 import org.apache.iotdb.tsfile.common.cache.LRUCache;
 import org.apache.iotdb.tsfile.common.constant.QueryConstant;
 import org.apache.iotdb.tsfile.exception.write.NoMeasurementException;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.file.metadata.ChunkGroupMetaData;
 import org.apache.iotdb.tsfile.file.metadata.ChunkMetaData;
 import org.apache.iotdb.tsfile.file.metadata.TsDeviceMetadata;
@@ -115,6 +116,7 @@ public class MetadataQuerierByFileImpl implements MetadataQuerier {
     }
 
     Map<Path, List<ChunkMetaData>> tempChunkMetaDatas = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
 
     int count = 0;
     boolean enough = false;

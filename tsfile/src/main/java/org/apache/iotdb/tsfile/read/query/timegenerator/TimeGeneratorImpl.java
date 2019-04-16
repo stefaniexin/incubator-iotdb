@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import org.apache.iotdb.tsfile.exception.write.UnSupportedDataTypeException;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.file.metadata.ChunkMetaData;
 import org.apache.iotdb.tsfile.read.common.Path;
 import org.apache.iotdb.tsfile.read.controller.ChunkLoader;
@@ -59,6 +60,7 @@ public class TimeGeneratorImpl implements TimeGenerator {
     this.chunkLoader = chunkLoader;
     this.metadataQuerier = metadataQuerier;
     this.leafCache = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
 
     operatorNode = construct(iexpression);
   }

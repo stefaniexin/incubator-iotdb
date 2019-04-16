@@ -874,6 +874,7 @@ public class MTree implements Serializable {
               + ". X (X is one of the nodes of root's children)");
     }
     HashMap<String, MeasurementSchema> leafMap = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
     putLeafToLeafMap(getRoot().getChild(nodes[1]), leafMap);
     ArrayList<MeasurementSchema> res = new ArrayList<>();
     res.addAll(leafMap.values());
@@ -889,6 +890,7 @@ public class MTree implements Serializable {
 
     String[] nodes = path.split(DOUB_SEPARATOR);
     HashMap<String, MeasurementSchema> leafMap = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
     MNode cur = getRoot();
     for (int i = 1; i < nodes.length; i++) {
       cur = cur.getChild(nodes[i]);

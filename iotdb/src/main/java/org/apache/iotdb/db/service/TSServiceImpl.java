@@ -640,6 +640,7 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
     Map<Long, QueryContext> contextMap = contextMapLocal.get();
     if (contextMap == null) {
       contextMap = new HashMap<>();
+      HashMapInstrumentor.incCount(this.getClass());
       contextMapLocal.set(contextMap);
     }
     contextMap.put(req.queryId, context);

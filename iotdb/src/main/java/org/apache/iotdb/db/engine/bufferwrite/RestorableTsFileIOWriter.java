@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.file.metadata.ChunkGroupMetaData;
 import org.apache.iotdb.tsfile.file.metadata.ChunkMetaData;
 import org.apache.iotdb.tsfile.file.metadata.TsDeviceMetadata;
@@ -89,6 +90,7 @@ public class RestorableTsFileIOWriter extends TsFileIOWriter {
     this.restoreFilePath = insertFilePath + RESTORE_SUFFIX;
 
     this.metadatas = new HashMap<>();
+    HashMapInstrumentor.incCount(this.getClass());
 
     File insertFile = new File(insertFilePath);
     File restoreFile = new File(restoreFilePath);
