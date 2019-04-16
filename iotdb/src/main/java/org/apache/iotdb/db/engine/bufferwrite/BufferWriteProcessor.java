@@ -48,6 +48,7 @@ import org.apache.iotdb.db.utils.MemUtils;
 import org.apache.iotdb.db.writelog.manager.MultiFileLogNodeManager;
 import org.apache.iotdb.db.writelog.node.WriteLogNode;
 import org.apache.iotdb.tsfile.common.conf.TSFileDescriptor;
+import org.apache.iotdb.tsfile.expr.HashMapInstrumentor;
 import org.apache.iotdb.tsfile.file.metadata.ChunkMetaData;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.utils.Pair;
@@ -117,6 +118,7 @@ public class BufferWriteProcessor extends Processor {
     bufferWriteRelativePath = processorName + File.separatorChar + fileName;
     try {
       writer = new RestorableTsFileIOWriter(processorName, insertFilePath);
+      HashMapInstrumentor.bwWriterCounter.addAndGet(1);
     } catch (IOException e) {
       throw new BufferWriteProcessorException(e);
     }

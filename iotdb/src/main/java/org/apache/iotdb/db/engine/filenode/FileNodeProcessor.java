@@ -551,6 +551,7 @@ public class FileNodeProcessor extends Processor implements IStatistic {
             insertTime + FileNodeConstants.BUFFERWRITE_FILE_SEPARATOR
                 + System.currentTimeMillis(),
             params, versionController, fileSchema);
+        HashMapInstrumentor.bwProcessorCounter.addAndGet(1);
       } catch (BufferWriteProcessorException e) {
         LOGGER.error("The filenode processor {} failed to get the bufferwrite processor.",
             processorName, e);
@@ -1756,6 +1757,7 @@ public class FileNodeProcessor extends Processor implements IStatistic {
       }
       bufferWriteProcessor.close();
       bufferWriteProcessor = null;
+      HashMapInstrumentor.bwCloseCounter.addAndGet(1);
     } catch (BufferWriteProcessorException e) {
       throw new FileNodeProcessorException(e);
     }

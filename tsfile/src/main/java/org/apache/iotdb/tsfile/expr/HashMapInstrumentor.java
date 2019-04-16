@@ -34,6 +34,10 @@ public class HashMapInstrumentor {
   private static final Map<Class, AtomicLong> newCounter = new ConcurrentHashMap<>();
   private static Thread reportTimer;
 
+  public static final AtomicLong bwWriterCounter = new AtomicLong(0);
+  public static final AtomicLong bwProcessorCounter = new AtomicLong(0);
+  public static final AtomicLong bwCloseCounter = new AtomicLong(0);
+
   public static void incCount(Class cls) {
     synchronized (newCounter) {
       AtomicLong count = newCounter.computeIfAbsent(cls, k -> new AtomicLong(0));
@@ -55,6 +59,9 @@ public class HashMapInstrumentor {
       }
       stringBuilder.append("total:").append(tot);
       LOGGER.info("HashMap usage:\n{}", stringBuilder);
+      LOGGER.info("newed bufferwriterWriters {}, newed bufferwriteProcessors {},"
+          + " closed bufferwrites {}", bwWriterCounter.get(), bwProcessorCounter.get(),
+          bwCloseCounter.get());
     }
   }
 
@@ -64,6 +71,7 @@ public class HashMapInstrumentor {
         try {
           Thread.sleep(5*60*1000L);
         } catch (InterruptedException e) {
+          LOGGER.error("unexpected exception", e);
           Thread.currentThread().interrupt();
           return;
         }
