@@ -159,7 +159,8 @@ public class TsFileIOWriter {
     header.serializeTo(out.wrapAsStream());
     LOG.debug("finish series chunk:{} header, file position {}", header, out.getPosition());
 
-    Map<String, ByteBuffer> statisticsMap = new HashMap<>();
+//    Map<String, ByteBuffer> statisticsMap = new HashMap<>();
+    Map<String, ByteBuffer> statisticsMap = new TreeMap<>();
     // TODO add your statistics
     statisticsMap.put(StatisticConstant.MAX_VALUE, ByteBuffer.wrap(statistics.getMaxBytes()));
     statisticsMap.put(StatisticConstant.MIN_VALUE, ByteBuffer.wrap(statistics.getMinBytes()));
