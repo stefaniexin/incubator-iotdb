@@ -101,7 +101,7 @@ public class BufferWriteProcessorNewTest {
   @Test
   public void testWriteAndFlush()
       throws BufferWriteProcessorException, WriteProcessException, IOException, InterruptedException {
-    bufferwrite = new BufferWriteProcessor(Directories.getInstance().getFolderForTest(),
+    bufferwrite = new BufferWriteProcessor(Directories.getInstance().getTsFolderForTest(),
         processorName, filename,
         parameters, SysTimeVersionController.INSTANCE,
         FileSchemaUtils.constructFileSchema(processorName));
@@ -157,7 +157,7 @@ public class BufferWriteProcessorNewTest {
 
     // test recovery
     BufferWriteProcessor bufferWriteProcessor = new BufferWriteProcessor(
-        Directories.getInstance().getFolderForTest(), processorName, filename, parameters,
+        Directories.getInstance().getTsFolderForTest(), processorName, filename, parameters,
         SysTimeVersionController.INSTANCE,
         FileSchemaUtils.constructFileSchema(processorName));
     pair = bufferWriteProcessor.queryBufferWriteData(processorName, measurementId, dataType, props);

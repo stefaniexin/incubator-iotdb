@@ -135,7 +135,7 @@ public class BufferwriteMetaSizeControlTest {
     parameters.put(FileNodeConstants.FILENODE_PROCESSOR_FLUSH_ACTION, fnflushaction);
 
     try {
-      processor = new BufferWriteProcessor(Directories.getInstance().getFolderForTest(), nsp,
+      processor = new BufferWriteProcessor(Directories.getInstance().getTsFolderForTest(), nsp,
           filename,
           parameters, SysTimeVersionController.INSTANCE, FileSchemaUtils.constructFileSchema(nsp));
     } catch (BufferWriteProcessorException e) {

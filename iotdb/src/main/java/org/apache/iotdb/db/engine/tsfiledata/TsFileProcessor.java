@@ -122,12 +122,16 @@ public class TsFileProcessor extends Processor {
   private TsFileResource currentResource;
 
   private List<TsFileResource> tsFileResources;
+  // device -> datafiles
   private Map<String, List<TsFileResource>> inverseIndexOfResource;
 
+  // device -> min timestamp in current data file
   private Map<String, Long> minWrittenTimeForEachDeviceInCurrentFile;
+  // device -> max timestamp in current data file (maybe in memory)
   private Map<String, Long> maxWrittenTimeForEachDeviceInCurrentFile;
+  // device -> the max timestamp in current data file on disk
   private Map<String, Long> lastFlushedTimeForEachDevice;
-
+  //wal
   private WriteLogNode logNode;
   private VersionController versionController;
 

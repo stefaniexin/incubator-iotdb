@@ -120,7 +120,7 @@ public class BufferWriteProcessorTest {
   @Test
   public void testWriteAndAbnormalRecover()
       throws WriteProcessException, InterruptedException, IOException, ProcessorException {
-    bufferwrite = new BufferWriteProcessor(directories.getFolderForTest(), deviceId, insertPath,
+    bufferwrite = new BufferWriteProcessor(directories.getTsFolderForTest(), deviceId, insertPath,
         parameters, SysTimeVersionController.INSTANCE,
         FileSchemaUtils.constructFileSchema(deviceId));
     for (int i = 1; i < 100; i++) {
@@ -145,7 +145,7 @@ public class BufferWriteProcessorTest {
     bufferwrite.close();
     file.renameTo(restoreFile);
     BufferWriteProcessor bufferWriteProcessor = new BufferWriteProcessor(
-        directories.getFolderForTest(), deviceId,
+        directories.getTsFolderForTest(), deviceId,
         insertPath, parameters, SysTimeVersionController.INSTANCE,
         FileSchemaUtils.constructFileSchema(deviceId));
     assertTrue(insertFile.exists());
@@ -164,7 +164,7 @@ public class BufferWriteProcessorTest {
   @Test
   public void testWriteAndNormalRecover()
       throws WriteProcessException, ProcessorException, InterruptedException {
-    bufferwrite = new BufferWriteProcessor(directories.getFolderForTest(), deviceId, insertPath,
+    bufferwrite = new BufferWriteProcessor(directories.getTsFolderForTest(), deviceId, insertPath,
         parameters, SysTimeVersionController.INSTANCE,
         FileSchemaUtils.constructFileSchema(deviceId));
     for (int i = 1; i < 100; i++) {
@@ -178,7 +178,7 @@ public class BufferWriteProcessorTest {
     File restoreFile = new File(dataFile, restoreFilePath);
     assertTrue(restoreFile.exists());
     BufferWriteProcessor bufferWriteProcessor = new BufferWriteProcessor(
-        directories.getFolderForTest(), deviceId,
+        directories.getTsFolderForTest(), deviceId,
         insertPath, parameters, SysTimeVersionController.INSTANCE,
         FileSchemaUtils.constructFileSchema(deviceId));
     Pair<ReadOnlyMemChunk, List<ChunkMetaData>> pair = bufferWriteProcessor
@@ -196,7 +196,7 @@ public class BufferWriteProcessorTest {
   @Test
   public void testWriteAndQuery()
       throws WriteProcessException, InterruptedException, ProcessorException {
-    bufferwrite = new BufferWriteProcessor(directories.getFolderForTest(), deviceId, insertPath,
+    bufferwrite = new BufferWriteProcessor(directories.getTsFolderForTest(), deviceId, insertPath,
         parameters, SysTimeVersionController.INSTANCE,
         FileSchemaUtils.constructFileSchema(deviceId));
     assertFalse(bufferwrite.isFlush());

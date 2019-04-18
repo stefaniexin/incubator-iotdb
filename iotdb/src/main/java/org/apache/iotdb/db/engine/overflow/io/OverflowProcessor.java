@@ -102,7 +102,8 @@ public class OverflowProcessor extends Processor {
     super(processorName);
     this.fileSchema = fileSchema;
     this.versionController = versionController;
-    String overflowDirPath = TsFileDBConf.getOverflowDataDir();
+    //for this old version, we only support one Overflow file
+    String overflowDirPath = TsFileDBConf.getOverflowDataDirs()[0];
     if (overflowDirPath.length() > 0
         && overflowDirPath.charAt(overflowDirPath.length() - 1) != File.separatorChar) {
       overflowDirPath = overflowDirPath + File.separatorChar;
