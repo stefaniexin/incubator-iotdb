@@ -387,6 +387,7 @@ public class BufferWriteProcessor extends Processor {
       flush().get();
       // end file
       writer.endFile(fileSchema);
+      writer = null;
       // update the IntervalFile for interval list
       bufferwriteCloseAction.act();
       // flush the changed information for filenode
