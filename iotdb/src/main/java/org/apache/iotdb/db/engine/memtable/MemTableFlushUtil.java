@@ -96,9 +96,12 @@ public class MemTableFlushUtil {
         MeasurementSchema desc = fileSchema.getMeasurementSchema(measurementId);
         ChunkBuffer chunkBuffer = new ChunkBuffer(desc);
         IChunkWriter seriesWriter = new ChunkWriterImpl(desc, chunkBuffer, PAGE_SIZE_THRESHOLD);
-        writeOneSeries(series.getSortedTimeValuePairList(), seriesWriter,
-            desc.getType());
-        seriesWriter.writeToFileWriter(tsFileIoWriter);
+        List<TimeValuePair> tvPairs = series.getSortedTimeValuePairList();
+        if(!tvPairs.isEmpty()) {
+          writeOneSeries(tvPairs, seriesWriter,
+              desc.getType());
+          seriesWriter.writeToFileWriter(tsFileIoWriter);
+        }
       }
       long memSize = tsFileIoWriter.getPos() - startPos;
       ChunkGroupFooter footer = new ChunkGroupFooter(deviceId, memSize, seriesNumber);

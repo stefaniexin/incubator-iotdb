@@ -295,4 +295,17 @@ public class DeletionQueryTest {
     }
     assertEquals(100, count);
   }
+
+  @Test
+  public void testDeleteAllInsert()
+      throws FileNodeManagerException, IOException, InterruptedException {
+    for (int i = 1; i <= 1; i++) {
+      TSRecord record = new TSRecord(i, processorName);
+      for (int j = 0; j < 1; j++) {
+        record.addTuple(new DoubleDataPoint(measurements[j], i * 1.0));
+      }
+      FileNodeManager.getInstance().insert(record, false);
+    }
+    FileNodeManager.getInstance().delete(processorName, measurements[0], 1);
+  }
 }
