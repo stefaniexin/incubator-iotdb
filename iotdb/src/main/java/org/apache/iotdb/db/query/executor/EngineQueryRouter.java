@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import org.apache.iotdb.db.engine.tsfiledata.TsFileProcessor;
 import org.apache.iotdb.db.exception.FileNodeManagerException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.ProcessorException;
@@ -30,6 +31,7 @@ import org.apache.iotdb.db.query.context.QueryContext;
 import org.apache.iotdb.db.query.executor.groupby.GroupByWithOnlyTimeFilterDataSetDataSet;
 import org.apache.iotdb.db.query.executor.groupby.GroupByWithValueFilterDataSetDataSet;
 import org.apache.iotdb.db.query.fill.IFill;
+import org.apache.iotdb.tsfile.exception.NotImplementedException;
 import org.apache.iotdb.tsfile.exception.filter.QueryFilterOptimizationException;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.read.common.Path;
@@ -218,5 +220,21 @@ public class EngineQueryRouter {
     return merged;
   }
 
+  /**
+   * TODO
+   * This is only for test TsFileProcessor now. This method will finally be replaced when
+   * fileNodeManager is refactored
+   */
+  public QueryDataSet query(QueryExpression queryExpression, TsFileProcessor processor,
+      QueryContext context)
+      throws FileNodeManagerException, IOException {
 
+    if (queryExpression.hasQueryFilter()) {
+      throw new NotImplementedException("this function is just for test...");
+    } else {
+      EngineExecutorWithoutTimeGenerator engineExecutor = new EngineExecutorWithoutTimeGenerator(
+          queryExpression);
+      return engineExecutor.executeWithoutFilter(context, processor);
+    }
+  }
 }
