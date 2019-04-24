@@ -183,8 +183,10 @@ public class TsFileProcessor extends Processor {
           unclosedFile = new File(unclosedFiles[0].getParentFile(), unclosedFileName);
         }
         File[] datas = dataFolder
-            .listFiles(x -> !x.getName().contains(RestorableTsFileIOWriter.RESTORE_SUFFIX) && x.getName().split(FileNodeConstants.BUFFERWRITE_FILE_SEPARATOR).length == 2);
-        Arrays.sort(datas, Comparator.comparingLong(x -> Long.parseLong(x.getName().split(FileNodeConstants.BUFFERWRITE_FILE_SEPARATOR)[0])));
+            .listFiles(x -> !x.getName().contains(RestorableTsFileIOWriter.RESTORE_SUFFIX)
+                && x.getName().split(FileNodeConstants.BUFFERWRITE_FILE_SEPARATOR).length == 2);
+        Arrays.sort(datas, Comparator.comparingLong(x -> Long
+            .parseLong(x.getName().split(FileNodeConstants.BUFFERWRITE_FILE_SEPARATOR)[0])));
         for (File tsfile : datas) {
           //TODO we'd better define a file suffix for TsFile, e.g., .ts
           String[] names = tsfile.getName().split(FileNodeConstants.BUFFERWRITE_FILE_SEPARATOR);
@@ -212,7 +214,7 @@ public class TsFileProcessor extends Processor {
       throw new BufferWriteProcessorException(String
           .format("TsProcessor %s has more than one unclosed TsFile. please repair it",
               processorName));
-    } else if (unclosedFileCount == 0){
+    } else if (unclosedFileCount == 0) {
       unclosedFile = generateNewTsFilePath();
     }
 
@@ -263,6 +265,10 @@ public class TsFileProcessor extends Processor {
 
   }
 
+  protected boolean canWrite(String device, long timestamp) {
+    return !lastFlushedTimeForEachDevice.containsKey(device)
+        || timestamp <= lastFlushedTimeForEachDevice.get(device);
+  }
   /**
    * wrete a ts record into the memtable. If the memory usage is beyond the memThreshold, an async
    * flushing operation will be called.
@@ -275,7 +281,7 @@ public class TsFileProcessor extends Processor {
    * @throws BufferWriteProcessorException if a flushing operation occurs and failed.
    */
   public int insert(InsertPlan plan) throws BufferWriteProcessorException, IOException {
-    if (lastFlushedTimeForEachDevice.containsKey(plan.getDeviceId()) && plan.getTime() <= lastFlushedTimeForEachDevice.get(plan.getDeviceId())) {
+    if (!canWrite(plan.getDeviceId(), plan.getTime())) {
       return WRITE_REJECT_BY_TIME;
     }
     if (IoTDBDescriptor.getInstance().getConfig().isEnableWal()) {
@@ -323,7 +329,7 @@ public class TsFileProcessor extends Processor {
     long time = plan.getTime();
     TSDataType type;
     String measurement;
-    for (int i=0; i < plan.getMeasurements().length; i++){
+    for (int i = 0; i < plan.getMeasurements().length; i++) {
       measurement = plan.getMeasurements()[i];
       type = fileSchemaRef.getMeasurementDataType(measurement);
       workMemTable.write(deviceId, measurement, type, time, plan.getValues()[i]);
@@ -331,8 +337,8 @@ public class TsFileProcessor extends Processor {
     if (!minWrittenTimeForEachDeviceInCurrentFile.containsKey(deviceId)) {
       minWrittenTimeForEachDeviceInCurrentFile.put(deviceId, time);
     }
-    if (!maxWrittenTimeForEachDeviceInCurrentFile.containsKey(deviceId) || maxWrittenTimeForEachDeviceInCurrentFile
-        .get(deviceId) < time) {
+    if (!maxWrittenTimeForEachDeviceInCurrentFile.containsKey(deviceId)
+        || maxWrittenTimeForEachDeviceInCurrentFile.get(deviceId) < time) {
       maxWrittenTimeForEachDeviceInCurrentFile.put(deviceId, time);
     }
     valueCount++;
@@ -348,8 +354,8 @@ public class TsFileProcessor extends Processor {
    */
   public void delete(String deviceId, String measurementId, long timestamp) throws IOException {
     workMemTable.delete(deviceId, measurementId, timestamp);
-    if (maxWrittenTimeForEachDeviceInCurrentFile.containsKey(deviceId) && maxWrittenTimeForEachDeviceInCurrentFile
-        .get(deviceId) < timestamp) {
+    if (maxWrittenTimeForEachDeviceInCurrentFile.containsKey(deviceId)
+        && maxWrittenTimeForEachDeviceInCurrentFile.get(deviceId) < timestamp) {
       maxWrittenTimeForEachDeviceInCurrentFile
           .put(deviceId, lastFlushedTimeForEachDevice.getOrDefault(deviceId, 0L));
     }
@@ -362,7 +368,8 @@ public class TsFileProcessor extends Processor {
     String fullPath = deviceId +
         IoTDBConstant.PATH_SEPARATOR + measurementId;
     Deletion deletion = new Deletion(fullPath, versionController.nextVersion(), timestamp);
-    if (deleteFlushTable || (currentResource.containsDevice(deviceId) && currentResource.getStartTime(deviceId) <= timestamp)) {
+    if (deleteFlushTable || (currentResource.containsDevice(deviceId)
+        && currentResource.getStartTime(deviceId) <= timestamp)) {
       currentResource.getModFile().write(deletion);
     }
     for (TsFileResource resource : tsFileResources) {
@@ -370,7 +377,8 @@ public class TsFileProcessor extends Processor {
         resource.getModFile().write(deletion);
       }
     }
-    if (lastFlushedTimeForEachDevice.containsKey(deviceId) && lastFlushedTimeForEachDevice.get(deviceId) <= timestamp) {
+    if (lastFlushedTimeForEachDevice.containsKey(deviceId)
+        && lastFlushedTimeForEachDevice.get(deviceId) <= timestamp) {
       lastFlushedTimeForEachDevice.put(deviceId, 0L);
     }
   }
