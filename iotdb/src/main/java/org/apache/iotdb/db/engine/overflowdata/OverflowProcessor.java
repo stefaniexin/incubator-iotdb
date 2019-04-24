@@ -20,10 +20,14 @@
 package org.apache.iotdb.db.engine.overflowdata;
 
 import java.io.IOException;
+import java.util.List;
+import org.apache.iotdb.db.conf.directories.Directories;
 import org.apache.iotdb.db.engine.bufferwrite.Action;
+import org.apache.iotdb.db.engine.sgmanager.OperationResult;
 import org.apache.iotdb.db.engine.tsfiledata.TsFileProcessor;
 import org.apache.iotdb.db.engine.version.VersionController;
 import org.apache.iotdb.db.exception.BufferWriteProcessorException;
+import org.apache.iotdb.db.qp.physical.crud.UpdatePlan;
 import org.apache.iotdb.tsfile.write.schema.FileSchema;
 
 public class OverflowProcessor extends TsFileProcessor {
@@ -46,6 +50,23 @@ public class OverflowProcessor extends TsFileProcessor {
         fileSchemaRef);
   }
 
+  @Override
+  protected List<String> getAllDataFolders() {
+    return Directories.getInstance().getAllOverflowFileFolders();
+  }
 
+  @Override
+  protected String getNextDataFolder() {
+    return Directories.getInstance().getNextFolderForOverflowFile();
+  }
+
+  @Override
+  protected boolean canWrite(String device, long timestamp) {
+    return true;
+  }
+
+  public OperationResult update(UpdatePlan plan) {
+    return null;
+  }
 
 }
