@@ -77,9 +77,7 @@ public class TsFileProcessorTest {
   long oldBufferwriteFileSizeThreshold = IoTDBDescriptor.getInstance().getConfig().getBufferwriteFileSizeThreshold();
   @Before
   public void setUp() throws Exception {
-    EnvironmentUtils.cleanEnv();
-    TEST_QUERY_JOB_ID = QueryResourceManager.getInstance().assignJobId();
-    TEST_QUERY_CONTEXT = new QueryContext(TEST_QUERY_JOB_ID);
+    EnvironmentUtils.envSetUp();
 //  now we do not support wal because it need to modify the wal module.
 //  IoTDBDescriptor.getInstance().getConfig().setEnableWal(true);
     IoTDBDescriptor.getInstance().getConfig().setBufferwriteFileSizeThreshold(2*1024*1024);
@@ -103,10 +101,10 @@ public class TsFileProcessorTest {
   public void tearDown() throws Exception {
     //processor.close();
     // processor.writeLock();
-   processor.removeMe();
-   EnvironmentUtils.cleanEnv();
-   IoTDBDescriptor.getInstance().getConfig().setEnableWal(false);
-   IoTDBDescriptor.getInstance().getConfig().setBufferwriteFileSizeThreshold(oldBufferwriteFileSizeThreshold);
+    processor.removeMe();
+    EnvironmentUtils.cleanEnv();
+    IoTDBDescriptor.getInstance().getConfig().setEnableWal(false);
+    IoTDBDescriptor.getInstance().getConfig().setBufferwriteFileSizeThreshold(oldBufferwriteFileSizeThreshold);
   }
 
   @Test
@@ -116,9 +114,9 @@ public class TsFileProcessorTest {
     String[] s2 = new String[]{"s2"};
     String[] value = new String[]{"5.0"};
     ;
-    Assert.assertTrue(processor.insert(new InsertPlan("root.test.d1",  10, s1, value)));
-    Assert.assertTrue(processor.insert(new InsertPlan("root.test.d1",  10, s2, value)));
-    Assert.assertTrue(processor.insert(new InsertPlan("root.test.d1",  12, s1, value)));
+    Assert.assertEquals(TsFileProcessor.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d1",  10, s1, value)));
+    Assert.assertEquals(TsFileProcessor.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d1",  10, s2, value)));
+    Assert.assertEquals(TsFileProcessor.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d1",  12, s1, value)));
     Future<Boolean> ok = processor.flush();
     ok.get();
     ok = processor.flush();
@@ -129,12 +127,12 @@ public class TsFileProcessorTest {
     ok.get();
 
     //let's rewrite timestamp =12 again..
-    Assert.assertFalse(processor.insert(new InsertPlan("root.test.d1",  12, s1, value)));
+    Assert.assertEquals(TsFileProcessor.WRITE_REJECT_BY_TIME, processor.insert(new InsertPlan("root.test.d1",  12, s1, value)));
     processor.delete("root.test.d1", "s1",12);
-    Assert.assertTrue(processor.insert(new InsertPlan("root.test.d1",  12, s1, value)));
-    Assert.assertTrue(processor.insert(new InsertPlan("root.test.d1",  13, s1, value)));
-    Assert.assertTrue(processor.insert(new InsertPlan("root.test.d2",  10, s1, value)));
-    Assert.assertTrue(processor.insert(new InsertPlan("root.test.d1",  14, s1, value)));
+    Assert.assertEquals(TsFileProcessor.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d1",  12, s1, value)));
+    Assert.assertEquals(TsFileProcessor.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d1",  13, s1, value)));
+    Assert.assertEquals(TsFileProcessor.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d2",  10, s1, value)));
+    Assert.assertEquals(TsFileProcessor.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d1",  14, s1, value)));
     processor.delete("root.test.d1", "s1",12);
     processor.delete("root.test.d3", "s1",12);
 
@@ -249,3 +247,5 @@ public class TsFileProcessorTest {
     //Assert.assertEquals(count[0], size);
   }
 }
+
+

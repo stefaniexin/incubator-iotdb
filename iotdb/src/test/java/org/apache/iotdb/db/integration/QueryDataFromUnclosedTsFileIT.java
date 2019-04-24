@@ -19,7 +19,6 @@
 
 package org.apache.iotdb.db.integration;
 
-
 import static org.apache.iotdb.db.utils.EnvironmentUtils.TEST_QUERY_CONTEXT;
 import static org.apache.iotdb.db.utils.EnvironmentUtils.TEST_QUERY_JOB_ID;
 
@@ -30,6 +29,7 @@ import org.apache.iotdb.db.engine.filenode.FileNodeManager;
 import org.apache.iotdb.db.exception.FileNodeManagerException;
 import org.apache.iotdb.db.exception.MetadataArgsErrorException;
 import org.apache.iotdb.db.exception.PathErrorException;
+import org.apache.iotdb.db.exception.StartupException;
 import org.apache.iotdb.db.metadata.MManager;
 import org.apache.iotdb.db.query.context.QueryContext;
 import org.apache.iotdb.db.query.control.QueryResourceManager;
@@ -55,8 +55,9 @@ public class QueryDataFromUnclosedTsFileIT {
   MManager mManager;
   EngineQueryRouter queryManager;
   @Before
-  public void setUp() throws IOException, FileNodeManagerException {
+  public void setUp() throws IOException, FileNodeManagerException, StartupException {
     EnvironmentUtils.cleanEnv();
+    EnvironmentUtils.envSetUp();
     TEST_QUERY_JOB_ID = QueryResourceManager.getInstance().assignJobId();
     TEST_QUERY_CONTEXT = new QueryContext(TEST_QUERY_JOB_ID);
     bufferWriteFileSize = IoTDBDescriptor.getInstance().getConfig().getBufferwriteFileSizeThreshold();
@@ -69,8 +70,7 @@ public class QueryDataFromUnclosedTsFileIT {
   @After
   public void tearDown() throws FileNodeManagerException, IOException {
     IoTDBDescriptor.getInstance().getConfig().setBufferwriteFileSizeThreshold(bufferWriteFileSize);;
-    //sgManager.deleteAll();
-    //mManager.clear();
+
     EnvironmentUtils.cleanEnv();
 
   }
@@ -78,8 +78,6 @@ public class QueryDataFromUnclosedTsFileIT {
   @Test
   public void test()
       throws FileNodeManagerException, IOException, PathErrorException, MetadataArgsErrorException {
-    //Path path, TSDataType dataType, TSEncoding encoding, CompressionType compressor,
-    //  Map<String, String> props
     mManager.setStorageLevelToMTree("root.test");
     mManager.addPathToMTree("root.test.d1.s1",  TSDataType.INT32, TSEncoding.RLE, CompressionType.SNAPPY, Collections.emptyMap());
     mManager.addPathToMTree("root.test.d2.s1",  TSDataType.INT32, TSEncoding.RLE, CompressionType.SNAPPY, Collections.emptyMap());
@@ -92,15 +90,13 @@ public class QueryDataFromUnclosedTsFileIT {
       sgManager.insert(new TSRecord(i, "root.test.d1").addTuple(new IntDataPoint("s1", i)), false);
       sgManager.insert(new TSRecord(i, "root.test.d2").addTuple(new IntDataPoint("s1", i)), false);
     }
-    //for (int i=0; i< 2; i++) {
-      QueryExpression qe = QueryExpression
-          .create(Collections.singletonList(new Path("root.test.d1", "s1")), null);
-      QueryDataSet result = queryManager.query(qe, TEST_QUERY_CONTEXT);
-      while (result.hasNext()) {
-        RowRecord record = result.next();
-        //System.out.println(record.getTimestamp() + "," + record.getFields().get(0).getIntV());
-      }
-    //}
+    QueryExpression qe = QueryExpression
+        .create(Collections.singletonList(new Path("root.test.d1", "s1")), null);
+    QueryDataSet result = queryManager.query(qe, TEST_QUERY_CONTEXT);
+    while (result.hasNext()) {
+      result.next();
+      //System.out.println(record.getTimestamp() + "," + record.getFields().get(0).getIntV());
+    }
 
   }
 

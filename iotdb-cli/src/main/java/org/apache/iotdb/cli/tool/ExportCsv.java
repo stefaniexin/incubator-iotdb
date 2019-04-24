@@ -44,8 +44,6 @@ import org.apache.iotdb.cli.exception.ArgsErrorException;
 import org.apache.iotdb.jdbc.Config;
 import org.apache.iotdb.jdbc.IoTDBConnection;
 import org.apache.thrift.TException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Export CSV file.
@@ -55,20 +53,24 @@ import org.slf4j.LoggerFactory;
  */
 public class ExportCsv extends AbstractCsvTool {
 
-  private static final String TARGET_FILE_ARGS = "td";
-  private static final String TARGET_FILE_NAME = "targetDirectory";
+  private static final String TARGET_DIR_ARGS = "td";
+  private static final String TARGET_DIR_NAME = "targetDirectory";
+
+  private static final String TARGET_FILE_ARGS = "f";
+  private static final String TARGET_FILE_NAME = "targetFile";
 
   private static final String SQL_FILE_ARGS = "s";
   private static final String SQL_FILE_NAME = "sqlfile";
 
   private static final String TSFILEDB_CLI_PREFIX = "ExportCsv";
 
-  private static final String DUMP_FILE_NAME = "dump";
+  private static final String DUMP_FILE_NAME_DEFAULT = "dump";
+  private static String targetFile = DUMP_FILE_NAME_DEFAULT;
 
   private static String targetDirectory;
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ExportCsv.class);
-
+  private static final int EXPORT_PER_LINE_COUNT = 10000;
+  
   /**
    * main function of export csv tool.
    */
@@ -81,14 +83,14 @@ public class ExportCsv extends AbstractCsvTool {
     CommandLineParser parser = new DefaultParser();
 
     if (args == null || args.length == 0) {
-      LOGGER.error("Too few params input, please check the following hint.");
+      System.out.println("Too few params input, please check the following hint.");
       hf.printHelp(TSFILEDB_CLI_PREFIX, options, true);
       return;
     }
     try {
       commandLine = parser.parse(options, args);
     } catch (ParseException e) {
-      LOGGER.error(e.getMessage());
+      System.out.println(e.getMessage());
       hf.printHelp(TSFILEDB_CLI_PREFIX, options, true);
       return;
     }
@@ -125,18 +127,16 @@ public class ExportCsv extends AbstractCsvTool {
         dumpFromSqlFile(sqlFile);
       }
     } catch (ClassNotFoundException e) {
-      LOGGER.error(
-          "Failed to dump data because cannot find TsFile JDBC Driver, "
-              + "please check whether you have imported driver or not", e);
-    } catch (SQLException e) {
-      LOGGER.error("Encounter an error when dumping data, error is ", e);
-    } catch (IOException e) {
-      LOGGER.error("Failed to operate on file, because ", e);
+      System.out.println("Failed to export data because cannot find IoTDB JDBC Driver, "
+              + "please check whether you have imported driver or not: " + e.getMessage());
     } catch (TException e) {
-      LOGGER.error("Encounter an error when connecting to server, because ",
-              e);
+      System.out.println("Encounter an error when connecting to server, because " + e.getMessage());
+    } catch (SQLException e) {
+      System.out.println("Encounter an error when exporting data, error is: " + e.getMessage());
+    } catch (IOException e) {
+      System.out.println("Failed to operate on file, because " + e.getMessage());
     } catch (ArgsErrorException e) {
-      LOGGER.error("Invalid args.", e);
+      System.out.println("Invalid args: " + e.getMessage());
     } finally {
       reader.close();
       if (connection != null) {
@@ -147,7 +147,11 @@ public class ExportCsv extends AbstractCsvTool {
 
   private static void parseSpecialParams(CommandLine commandLine)
       throws ArgsErrorException {
-    targetDirectory = checkRequiredArg(TARGET_FILE_ARGS, TARGET_FILE_NAME, commandLine);
+    targetDirectory = checkRequiredArg(TARGET_DIR_ARGS, TARGET_DIR_NAME, commandLine);
+    targetFile = commandLine.getOptionValue(TARGET_FILE_ARGS);
+    if(targetFile == null){
+      targetFile = DUMP_FILE_NAME_DEFAULT;
+    }
     timeFormat = commandLine.getOptionValue(TIME_FORMAT_ARGS);
     if (timeFormat == null) {
       timeFormat = "default";
@@ -185,10 +189,14 @@ public class ExportCsv extends AbstractCsvTool {
         .argName(PASSWORD_NAME).hasArg().desc("Password (optional)").build();
     options.addOption(opPassword);
 
-    Option opTargetFile = Option.builder(TARGET_FILE_ARGS).required().argName(TARGET_FILE_NAME)
+    Option opTargetFile = Option.builder(TARGET_DIR_ARGS).required().argName(TARGET_DIR_NAME)
         .hasArg()
         .desc("Target File Directory (required)").build();
     options.addOption(opTargetFile);
+
+    Option targetFileName = Option.builder(TARGET_FILE_ARGS).argName(TARGET_FILE_NAME).hasArg()
+        .desc("Export file name (optional)").build();
+    options.addOption(targetFileName);
 
     Option opSqlFile = Option.builder(SQL_FILE_ARGS).argName(SQL_FILE_NAME).hasArg()
         .desc("SQL File Path (optional)").build();
@@ -221,7 +229,7 @@ public class ExportCsv extends AbstractCsvTool {
         try {
           dumpResult(sql, index);
         } catch (SQLException e) {
-          LOGGER.error("Cannot dump data for statement {}, because ", sql, e);
+          System.out.println("Cannot dump data for statement " + sql + ", because : " + e.getMessage());
         }
         index++;
       }
@@ -238,18 +246,18 @@ public class ExportCsv extends AbstractCsvTool {
   private static void dumpResult(String sql, int index)
       throws SQLException {
 
-    final String path = targetDirectory + DUMP_FILE_NAME + index + ".csv";
+    final String path = index > 0 ? targetDirectory + targetFile + ".csv" : targetDirectory + targetFile + index + ".csv";
     File tf = new File(path);
     try {
       if (!tf.exists() && !tf.createNewFile()) {
-          LOGGER.error("Could not create target file for sql statement: {}", sql);
+          System.out.println("Could not create target file for sql statement: " + sql);
           return;
       }
     } catch (IOException e) {
-      LOGGER.error("Cannot create dump file {}", path,  e);
+      System.out.println("Cannot create dump file "+ path + "because: " + e.getMessage());
       return;
     }
-
+    System.out.println("Start to export data from sql statement: "+ sql);
     try (Statement statement = connection.createStatement();
         ResultSet rs = statement.executeQuery(sql);
         BufferedWriter bw = new BufferedWriter(new FileWriter(tf))) {
@@ -260,11 +268,11 @@ public class ExportCsv extends AbstractCsvTool {
       // write data in csv file
       writeMetadata(bw, count, metadata);
 
-      writeResultSet(rs, bw, count);
-      LOGGER.info("Statement [{}] has dumped to file {} successfully! It costs {}ms.",
-          sql, path, System.currentTimeMillis() - startTime);
+      int line = writeResultSet(rs, bw, count);
+      System.out.println(String.format("Statement [%s] has dumped to file %s successfully! It costs "
+          + "%dms to export %d lines.", sql, path, System.currentTimeMillis() - startTime, line));
     } catch (IOException e) {
-      LOGGER.error("Cannot dump result because", e);
+      System.out.println("Cannot dump result because: " + e.getMessage());
     }
   }
 
@@ -279,8 +287,10 @@ public class ExportCsv extends AbstractCsvTool {
     }
   }
 
-  private static void writeResultSet(ResultSet rs, BufferedWriter bw, int count)
+  private static int writeResultSet(ResultSet rs, BufferedWriter bw, int count)
       throws SQLException, IOException {
+    int line = 0;
+    long timestamp = System.currentTimeMillis();
     while (rs.next()) {
       if (rs.getString(1) == null ||
           "null".equalsIgnoreCase(rs.getString(1))) {
@@ -289,7 +299,14 @@ public class ExportCsv extends AbstractCsvTool {
         writeTime(rs, bw);
         writeValue(rs, count, bw);
       }
+      line++;
+      if(line % EXPORT_PER_LINE_COUNT == 0){
+        long tmp = System.currentTimeMillis();
+        System.out.println(String.format("%d lines have been exported, it takes %dms", line, (tmp-timestamp)));
+        timestamp = tmp;
+      }
     }
+    return line;
   }
 
   private static void writeTime(ResultSet rs, BufferedWriter bw) throws SQLException, IOException {
