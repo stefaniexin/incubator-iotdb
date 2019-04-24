@@ -164,7 +164,7 @@ public class TsFileProcessor extends Processor {
     File unclosedFile = null;
     String unclosedFileName = null;
     int unclosedFileCount = 0;
-    for (String folderPath : Directories.getInstance().getAllTsFileFolders()) {
+    for (String folderPath : getAllDataFolders()) {
       File dataFolder = new File(folderPath, processorName);
       if (dataFolder.exists()) {
         // we do not add the unclosed tsfile into tsFileResources.
@@ -229,7 +229,7 @@ public class TsFileProcessor extends Processor {
 
 
   private File generateNewTsFilePath() throws BufferWriteProcessorException {
-    String dataDir = Directories.getInstance().getNextFolderForTsfile();
+    String dataDir = getNextDataFolder();
     File dataFolder = new File(dataDir, processorName);
     if (!dataFolder.exists()) {
       if (!dataFolder.mkdirs()) {
@@ -777,6 +777,14 @@ public class TsFileProcessor extends Processor {
       return true;
     }
     return false;
+  }
+
+  protected List<String> getAllDataFolders() {
+    return Directories.getInstance().getAllTsFileFolders();
+  }
+
+  protected String getNextDataFolder() {
+    return Directories.getInstance().getNextFolderForTsfile();
   }
 
   @Override
