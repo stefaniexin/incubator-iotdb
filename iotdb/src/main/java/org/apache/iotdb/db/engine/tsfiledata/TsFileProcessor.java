@@ -263,7 +263,7 @@ public class TsFileProcessor extends Processor {
 
   protected boolean canWrite(String device, long timestamp) {
     return !lastFlushedTimeForEachDevice.containsKey(device)
-        || timestamp <= lastFlushedTimeForEachDevice.get(device);
+        || timestamp > lastFlushedTimeForEachDevice.get(device);
   }
   /**
    * wrete a ts record into the memtable. If the memory usage is beyond the memThreshold, an async
