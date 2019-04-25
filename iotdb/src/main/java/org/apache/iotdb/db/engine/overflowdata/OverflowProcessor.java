@@ -20,14 +20,24 @@
 package org.apache.iotdb.db.engine.overflowdata;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.apache.iotdb.db.conf.directories.Directories;
 import org.apache.iotdb.db.engine.bufferwrite.Action;
+import org.apache.iotdb.db.engine.querycontext.OverflowInsertFile;
+import org.apache.iotdb.db.engine.querycontext.OverflowSeriesDataSource;
+import org.apache.iotdb.db.engine.querycontext.ReadOnlyMemChunk;
 import org.apache.iotdb.db.engine.sgmanager.OperationResult;
 import org.apache.iotdb.db.engine.tsfiledata.TsFileProcessor;
 import org.apache.iotdb.db.engine.version.VersionController;
 import org.apache.iotdb.db.exception.BufferWriteProcessorException;
 import org.apache.iotdb.db.qp.physical.crud.UpdatePlan;
+import org.apache.iotdb.db.query.context.QueryContext;
+import org.apache.iotdb.tsfile.file.metadata.ChunkMetaData;
+import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
+import org.apache.iotdb.tsfile.read.common.Path;
+import org.apache.iotdb.tsfile.utils.Pair;
 import org.apache.iotdb.tsfile.write.schema.FileSchema;
 
 public class OverflowProcessor extends TsFileProcessor {
@@ -68,5 +78,6 @@ public class OverflowProcessor extends TsFileProcessor {
   public OperationResult update(UpdatePlan plan) {
     return null;
   }
+
 
 }
