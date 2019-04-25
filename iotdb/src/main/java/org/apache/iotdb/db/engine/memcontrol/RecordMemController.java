@@ -146,6 +146,12 @@ public class RecordMemController extends BasicMemController {
     AtomicLong usage = memMap.get(user);
     if (usage == null) {
       LOGGER.error("Unregistered memory usage from {}", user);
+      try {
+        throw new Exception();
+      } catch (Exception e) {
+        LOGGER.error("Release stack trace ", e);
+      }
+      MemReportThread.report();
       return;
     }
     long usageLong = usage.get();
@@ -173,5 +179,9 @@ public class RecordMemController extends BasicMemController {
 
     private static final RecordMemController INSTANCE = new RecordMemController(
         IoTDBDescriptor.getInstance().getConfig());
+  }
+
+  public Map<Object, AtomicLong> getMemMap() {
+    return memMap;
   }
 }

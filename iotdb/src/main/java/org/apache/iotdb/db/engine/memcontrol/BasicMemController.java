@@ -33,6 +33,7 @@ public abstract class BasicMemController implements IService {
   protected long dangerouseThreshold;
   protected MemMonitorThread monitorThread;
   protected MemStatisticThread memStatisticThread;
+  protected MemReportThread memReportThread;
   private IoTDBConfig config;
 
   BasicMemController(IoTDBConfig config) {
@@ -74,6 +75,10 @@ public abstract class BasicMemController implements IService {
           memStatisticThread.start();
         } else {
           logger.warn("Attempt to start MemController but it has already started");
+        }
+        if (memReportThread == null) {
+          memReportThread = new MemReportThread();
+          memReportThread.start();
         }
       }
       logger.info("MemController starts");
