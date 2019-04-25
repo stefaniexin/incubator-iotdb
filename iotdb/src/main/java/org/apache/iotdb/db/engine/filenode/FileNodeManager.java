@@ -578,7 +578,7 @@ public class FileNodeManager implements IStatistic, IService {
     FileNodeProcessor processor = processorMap.get(processorName);
     if (!processor.tryWriteLock()) {
       throw new FileNodeManagerException(String
-          .format("Delete the filenode processor %s because Can't get the write lock.",
+          .format("Can't delete the filenode processor %s because Can't get the write lock.",
               processorName));
     }
 
@@ -609,7 +609,7 @@ public class FileNodeManager implements IStatistic, IService {
     FileNodeProcessor fileNodeProcessor = getProcessor(deviceId, true);
     try {
       fileNodeProcessor.deleteBufferWrite(deviceId, measurementId, timestamp);
-    } catch (IOException e) {
+    } catch (BufferWriteProcessorException | IOException e) {
       throw new FileNodeManagerException(e);
     } finally {
       fileNodeProcessor.writeUnlock();
