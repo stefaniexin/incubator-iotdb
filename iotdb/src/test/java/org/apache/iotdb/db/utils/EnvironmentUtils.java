@@ -103,7 +103,9 @@ public class EnvironmentUtils {
       cleanDir(path);
     }
     // delete overflow
-    cleanDir(config.getOverflowDataDir());
+    for (String path : directories.getAllOverflowFileFolders()) {
+      cleanDir(path);
+    }
     // delete filenode
     cleanDir(config.getFileNodeDir());
     // delete metadata

@@ -71,11 +71,13 @@ public class OverflowProcessorBenchmark {
   }
 
   private static void before() throws IOException {
-    FileUtils.deleteDirectory(new File(TsFileDBConf.getOverflowDataDir()));
+    for (String file : TsFileDBConf.getOverflowDataDirs()) {
+      FileUtils.deleteDirectory(new File(file));
+    }
   }
 
   private static void after() throws IOException {
-    FileUtils.deleteDirectory(new File(TsFileDBConf.getOverflowDataDir()));
+    before();
   }
 
   public static void main(String[] args) throws IOException, OverflowProcessorException {

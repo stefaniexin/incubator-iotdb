@@ -242,7 +242,7 @@ public class DeletionFileNodeTest {
         new Deletion(processorName + "." + measurements[3], 105, 30),
     };
 
-    String fileNodePath = IoTDBDescriptor.getInstance().getConfig().getOverflowDataDir() + File.separator
+    String fileNodePath = IoTDBDescriptor.getInstance().getConfig().getOverflowDataDirs()[0] + File.separator
         + processorName + File.separator + "0" + File.separator;
     File fileNodeDir = new File(fileNodePath);
     File[] modFiles = fileNodeDir.listFiles((dir, name)

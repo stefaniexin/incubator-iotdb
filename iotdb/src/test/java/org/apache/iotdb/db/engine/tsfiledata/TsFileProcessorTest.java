@@ -31,6 +31,7 @@ import java.util.concurrent.Future;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.engine.bufferwrite.Action;
 import org.apache.iotdb.db.engine.bufferwrite.ActionException;
+import org.apache.iotdb.db.engine.sgmanager.OperationResult;
 import org.apache.iotdb.db.engine.version.SysTimeVersionController;
 import org.apache.iotdb.db.exception.BufferWriteProcessorException;
 import org.apache.iotdb.db.exception.FileNodeManagerException;
@@ -62,19 +63,19 @@ import org.slf4j.LoggerFactory;
 
 public class TsFileProcessorTest {
   private static Logger LOGGER = LoggerFactory.getLogger(TsFileProcessorTest.class);
-  TsFileProcessor processor;
-  MManager mManager;
-  EngineQueryRouter queryManager;
-  Action doNothingAction = new Action() {
+  protected TsFileProcessor processor;
+  protected MManager mManager;
+  protected EngineQueryRouter queryManager;
+  protected Action doNothingAction = new Action() {
     @Override
     public void act() throws ActionException {
     }
   };
-  Map<String, MeasurementSchema> measurementSchemaMap = new HashMap<>();
+  protected Map<String, MeasurementSchema> measurementSchemaMap = new HashMap<>();
 
-  FileSchema schema;
+  protected FileSchema schema;
 
-  long oldBufferwriteFileSizeThreshold = IoTDBDescriptor.getInstance().getConfig().getBufferwriteFileSizeThreshold();
+  protected long oldBufferwriteFileSizeThreshold = IoTDBDescriptor.getInstance().getConfig().getBufferwriteFileSizeThreshold();
   @Before
   public void setUp() throws Exception {
     EnvironmentUtils.envSetUp();
@@ -114,9 +115,10 @@ public class TsFileProcessorTest {
     String[] s2 = new String[]{"s2"};
     String[] value = new String[]{"5.0"};
     ;
-    Assert.assertEquals(TsFileProcessor.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d1",  10, s1, value)));
-    Assert.assertEquals(TsFileProcessor.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d1",  10, s2, value)));
-    Assert.assertEquals(TsFileProcessor.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d1",  12, s1, value)));
+    Assert.assertEquals(
+        OperationResult.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d1",  10, s1, value)));
+    Assert.assertEquals(OperationResult.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d1",  10, s2, value)));
+    Assert.assertEquals(OperationResult.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d1",  12, s1, value)));
     Future<Boolean> ok = processor.flush();
     ok.get();
     ok = processor.flush();
@@ -127,12 +129,12 @@ public class TsFileProcessorTest {
     ok.get();
 
     //let's rewrite timestamp =12 again..
-    Assert.assertEquals(TsFileProcessor.WRITE_REJECT_BY_TIME, processor.insert(new InsertPlan("root.test.d1",  12, s1, value)));
+    Assert.assertEquals(OperationResult.WRITE_REJECT_BY_TIME, processor.insert(new InsertPlan("root.test.d1",  12, s1, value)));
     processor.delete("root.test.d1", "s1",12);
-    Assert.assertEquals(TsFileProcessor.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d1",  12, s1, value)));
-    Assert.assertEquals(TsFileProcessor.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d1",  13, s1, value)));
-    Assert.assertEquals(TsFileProcessor.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d2",  10, s1, value)));
-    Assert.assertEquals(TsFileProcessor.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d1",  14, s1, value)));
+    Assert.assertEquals(OperationResult.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d1",  12, s1, value)));
+    Assert.assertEquals(OperationResult.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d1",  13, s1, value)));
+    Assert.assertEquals(OperationResult.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d2",  10, s1, value)));
+    Assert.assertEquals(OperationResult.WRITE_SUCCESS, processor.insert(new InsertPlan("root.test.d1",  14, s1, value)));
     processor.delete("root.test.d1", "s1",12);
     processor.delete("root.test.d3", "s1",12);
 
@@ -150,8 +152,6 @@ public class TsFileProcessorTest {
   @Test
   public void bruteForceTest() throws InterruptedException, FileNodeManagerException, IOException {
 
-    String[] devices = new String[] {"root.test.d1", "root.test.d2"};
-    String[] sensors = new String[] {"s1", "s2"};
     final boolean[] exception = {false, false, false};
     final boolean[] goon = {true};
     int totalsize = 50000;
