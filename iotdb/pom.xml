@@ -70,6 +70,12 @@
             <artifactId>commons-lang3</artifactId>
             <version>${common.lang3.version}</version>
         </dependency>
+        <!-- jamm is for measuring the memory cost -->
+        <dependency>
+            <groupId>com.github.jbellis</groupId>
+            <artifactId>jamm</artifactId>
+            <version>0.3.3</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

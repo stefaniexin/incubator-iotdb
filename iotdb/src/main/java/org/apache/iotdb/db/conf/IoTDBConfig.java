@@ -277,6 +277,13 @@ public class IoTDBConfig {
    */
   private long cacheFileReaderClearPeriod = 100000;
 
+  /**
+   * the memory limit (Bytes) for each query;
+   * by default, it is 5MB
+   * if there are too many overflow files, you may need to enlarge it.
+   */
+  private long queryMemoryLimit = 5242880;
+
   public IoTDBConfig() {
     // empty constructor
   }
@@ -825,5 +832,13 @@ public class IoTDBConfig {
 
   public void setCacheFileReaderClearPeriod(long cacheFileReaderClearPeriod) {
     this.cacheFileReaderClearPeriod = cacheFileReaderClearPeriod;
+  }
+
+  public long getQueryMemoryLimit() {
+    return queryMemoryLimit;
+  }
+
+  public void setQueryMemoryLimit(long queryMemoryLimit) {
+    this.queryMemoryLimit = queryMemoryLimit;
   }
 }
