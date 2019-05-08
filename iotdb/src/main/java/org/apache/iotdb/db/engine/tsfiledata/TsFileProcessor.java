@@ -805,34 +805,11 @@ public class TsFileProcessor extends Processor {
     if (!super.equals(o)) {
       return false;
     }
-    TsFileProcessor that = (TsFileProcessor) o;
-    return fileNamePrefix == that.fileNamePrefix &&
-        valueCount == that.valueCount &&
-        Objects.equals(fileSchemaRef, that.fileSchemaRef) &&
-        Objects.equals(flushFuture, that.flushFuture) &&
-        Objects.equals(flushQueryLock, that.flushQueryLock) &&
-        Objects.equals(memSize, that.memSize) &&
-        Objects.equals(workMemTable, that.workMemTable) &&
-        Objects.equals(flushMemTable, that.flushMemTable) &&
-        Objects.equals(writer, that.writer) &&
-        Objects.equals(beforeFlushAction, that.beforeFlushAction) &&
-        Objects.equals(afterCloseAction, that.afterCloseAction) &&
-        Objects.equals(afterFlushAction, that.afterFlushAction) &&
-        Objects.equals(insertFile, that.insertFile) &&
-        Objects.equals(currentResource, that.currentResource) &&
-        Objects.equals(tsFileResources, that.tsFileResources) &&
-        Objects.equals(inverseIndexOfResource, that.inverseIndexOfResource) &&
-        Objects.equals(lastFlushedTimeForEachDevice, that.lastFlushedTimeForEachDevice) &&
-        Objects.equals(logNode, that.logNode) &&
-        Objects.equals(versionController, that.versionController);
+    return this == o;
   }
 
   @Override
   public int hashCode() {
-    return Objects
-        .hash(super.hashCode(), fileSchemaRef, flushFuture, flushQueryLock, memSize, fileNamePrefix,
-            valueCount, workMemTable, flushMemTable, writer, beforeFlushAction, afterCloseAction,
-            afterFlushAction, insertFile, currentResource, tsFileResources, inverseIndexOfResource,
-            lastFlushedTimeForEachDevice, logNode, versionController);
+    return super.hashCode();
   }
 }
