@@ -80,7 +80,7 @@ public class TsFileProcessorTest {
   public void setUp() throws Exception {
     EnvironmentUtils.envSetUp();
 //  now we do not support wal because it need to modify the wal module.
-//  IoTDBDescriptor.getInstance().getConfig().setEnableWal(true);
+    IoTDBDescriptor.getInstance().getConfig().setEnableWal(true);
     IoTDBDescriptor.getInstance().getConfig().setBufferwriteFileSizeThreshold(2*1024*1024);
     mManager = MManager.getInstance();
     queryManager = new EngineQueryRouter();

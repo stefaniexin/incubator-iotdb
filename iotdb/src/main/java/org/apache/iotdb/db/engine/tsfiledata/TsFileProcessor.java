@@ -221,7 +221,7 @@ public class TsFileProcessor extends Processor {
     if (IoTDBDescriptor.getInstance().getConfig().isEnableWal()) {
       try {
         logNode = MultiFileLogNodeManager.getInstance().getNode(
-            processorName + IoTDBConstant.BUFFERWRITE_LOG_NODE_SUFFIX,
+            processorName + getLogSuffix(),
             writer.getRestoreFilePath(),
             FileNodeManager.getInstance().getRestoreFilePath(processorName));
       } catch (IOException e) {
@@ -794,17 +794,12 @@ public class TsFileProcessor extends Processor {
     return Directories.getInstance().getNextFolderForTsfile();
   }
 
+  protected String getLogSuffix() {
+    return IoTDBConstant.BUFFERWRITE_LOG_NODE_SUFFIX;
+  }
+
   @Override
   public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (!(o instanceof TsFileProcessor)) {
-      return false;
-    }
-    if (!super.equals(o)) {
-      return false;
-    }
     return this == o;
   }
 
