@@ -64,6 +64,7 @@ import org.apache.iotdb.db.engine.version.VersionController;
 import org.apache.iotdb.db.exception.BufferWriteProcessorException;
 import org.apache.iotdb.db.qp.constant.DatetimeUtils;
 import org.apache.iotdb.db.qp.physical.crud.InsertPlan;
+import org.apache.iotdb.db.qp.physical.crud.UpdatePlan;
 import org.apache.iotdb.db.query.context.QueryContext;
 import org.apache.iotdb.db.utils.ImmediateFuture;
 import org.apache.iotdb.db.utils.MemUtils;
@@ -75,6 +76,7 @@ import org.apache.iotdb.tsfile.file.metadata.ChunkMetaData;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.read.common.Path;
 import org.apache.iotdb.tsfile.read.expression.impl.SingleSeriesExpression;
+import org.apache.iotdb.tsfile.utils.Pair;
 import org.apache.iotdb.tsfile.write.schema.FileSchema;
 import org.apache.iotdb.tsfile.write.schema.MeasurementSchema;
 import org.slf4j.Logger;
@@ -337,6 +339,14 @@ public class TsFileProcessor extends Processor {
       maxWrittenTimeForEachDeviceInCurrentFile.put(deviceId, time);
     }
     valueCount++;
+  }
+
+  public OperationResult update(UpdatePlan plan) {
+    String device = plan.getPath().getDevice();
+    String measurement = plan.getPath().getMeasurement();
+    List<Pair<Long, Long>> intervals = plan.getIntervals();
+    //TODO modify workMemtable, flushMemtable, and existing TsFiles
+    return OperationResult.WRITE_REJECT_BY_MEM;
   }
 
   /**

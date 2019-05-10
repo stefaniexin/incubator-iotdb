@@ -80,9 +80,5 @@ public class OverflowProcessor extends TsFileProcessor {
   protected String getLogSuffix() {
     return IoTDBConstant.OVERFLOW_LOG_NODE_SUFFIX;
   }
-  public OperationResult update(UpdatePlan plan) {
-    return null;
-  }
-
 
 }
