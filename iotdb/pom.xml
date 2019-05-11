@@ -70,9 +70,35 @@
             <artifactId>commons-lang3</artifactId>
             <version>${common.lang3.version}</version>
         </dependency>
+        <!-- jamm is for measuring the memory cost -->
+        <dependency>
+            <groupId>com.github.jbellis</groupId>
+            <artifactId>jamm</artifactId>
+            <version>0.3.3</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
+            <!-- add cassandra's source file -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>1.4</version>
+                <executions>
+                    <execution>
+                        <id>add-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${basedir}/src/main/cassandra</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <artifactId>maven-clean-plugin</artifactId>
                 <configuration>

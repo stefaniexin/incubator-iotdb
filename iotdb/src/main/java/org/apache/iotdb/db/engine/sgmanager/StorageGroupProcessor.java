@@ -72,12 +72,9 @@ import org.slf4j.LoggerFactory;
 public class StorageGroupProcessor extends Processor implements IStatistic {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(StorageGroupProcessor.class);
-  private static final String RESTORE_FILE_SUFFIX = ".restore";
 
   TsFileProcessor tsFileProcessor;
   OverflowProcessor overflowProcessor;
-  private FileNodeProcessorStore fileNodeProcessorStore;
-  String fileNodeProcessorStoreFilePath;
 
   //the version controller is shared by tsfile and overflow processor.
   private VersionController versionController;
@@ -97,30 +94,18 @@ public class StorageGroupProcessor extends Processor implements IStatistic {
 
     this.fileSchema = constructFileSchema(processorName);
 
-    File restoreFolder = new File(IoTDBDescriptor.getInstance().getConfig().getFileNodeDir(),
+    File systemFolder = new File(IoTDBDescriptor.getInstance().getConfig().getFileNodeDir(),
         processorName);
-    if (!restoreFolder.exists()) {
-      restoreFolder.mkdirs();
-      LOGGER.info("The restore directory of the filenode processor {} doesn't exist. Create new " +
-              "directory {}",
-          getProcessorName(), restoreFolder.getAbsolutePath());
+    if (!systemFolder.exists()) {
+      systemFolder.mkdirs();
+      LOGGER.info("The directory of the filenode processor {} doesn't exist. Create new directory {}",
+          getProcessorName(), systemFolder.getAbsolutePath());
     }
-    versionController = new SimpleFileVersionController(restoreFolder.getAbsolutePath());
+    versionController = new SimpleFileVersionController(systemFolder.getAbsolutePath());
     tsFileProcessor = new TsFileProcessor(processorName, beforeFlushAction, afterFlushAction,
         afterCloseAction, versionController, fileSchema);
     overflowProcessor = new OverflowProcessor(processorName, beforeFlushAction, afterFlushAction,
         afterCloseAction, versionController, fileSchema);
-
-    fileNodeProcessorStoreFilePath = new File(restoreFolder, processorName + RESTORE_FILE_SUFFIX)
-        .getPath();
-    try {
-      readStoreFromDisk();
-    } catch (FileNodeProcessorException | IOException e) {
-      LOGGER.error(
-          "The fileNode processor {} encountered an error when recoverying restore " +
-              "information.", processorName);
-      throw new FileNodeProcessorException(e);
-    }
 
     // RegistStatService
     if (IoTDBDescriptor.getInstance().getConfig().isEnableStatMonitor()) {
@@ -143,11 +128,13 @@ public class StorageGroupProcessor extends Processor implements IStatistic {
   }
 
   public void update(UpdatePlan plan) {
+    tsFileProcessor.update(plan);
     overflowProcessor.update(plan);
   }
 
   public void delete(String device, String measurementId, long timestamp) throws IOException {
     tsFileProcessor.delete(device, measurementId, timestamp);
+    overflowProcessor.delete(device, measurementId, timestamp);
   }
 
   /**
@@ -168,9 +155,6 @@ public class StorageGroupProcessor extends Processor implements IStatistic {
   public void addExternalOverflowFile() {
 
   }
-
-
-
 
   @Override
   public boolean canBeClosed() {
@@ -225,24 +209,5 @@ public class StorageGroupProcessor extends Processor implements IStatistic {
     }
     return schema;
 
-  }
-
-
-  private void readStoreFromDisk()
-      throws FileNodeProcessorException, IOException {
-    //only be used when recorvery, and at this time, there is no write operations.
-    File restoreFile = new File(fileNodeProcessorStoreFilePath);
-    if (!restoreFile.exists() || restoreFile.length() == 0) {
-      fileNodeProcessorStore = new FileNodeProcessorStore(false, new HashMap<>(),
-          new TsFileResource(null, false),
-          new ArrayList<>(), FileNodeProcessorStatus.NONE, 0);
-    }
-    try (FileInputStream inputStream = new FileInputStream(fileNodeProcessorStoreFilePath)) {
-      fileNodeProcessorStore = FileNodeProcessorStore.deSerialize(inputStream);
-    } catch (IOException e) {
-      LOGGER.error("Failed to deserialize the FileNodeRestoreFile {}, {}",
-          fileNodeProcessorStoreFilePath, e);
-      throw new FileNodeProcessorException(e);
-    }
   }
 }

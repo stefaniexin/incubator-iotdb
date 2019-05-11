@@ -16,26 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.iotdb.db.exception;
 
-public class FileNodeManagerException extends Exception {
+package org.apache.iotdb.db.query.reader.overflow;
 
-  private static final long serialVersionUID = 9001649171768311032L;
+import java.util.LinkedList;
+import java.util.List;
 
-  public FileNodeManagerException() {
-    super();
-  }
+public class OverflowSeriesMultiFileReader {
+  private String device;
+  private String measurement;
 
-  public FileNodeManagerException(String message, Throwable cause) {
-    super(message, cause);
-  }
+  //this list should be sorted.
+  private List<ConciseChunkMetadataWithFileName> metadataList = new LinkedList<>();
 
-  public FileNodeManagerException(String message) {
-    super(message);
-  }
-
-  public FileNodeManagerException(Throwable cause) {
-    super(cause);
-  }
 
 }

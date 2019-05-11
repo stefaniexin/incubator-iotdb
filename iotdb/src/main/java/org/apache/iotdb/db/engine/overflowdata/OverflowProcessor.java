@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.apache.iotdb.db.conf.IoTDBConstant;
 import org.apache.iotdb.db.conf.directories.Directories;
 import org.apache.iotdb.db.engine.bufferwrite.Action;
 import org.apache.iotdb.db.engine.querycontext.OverflowInsertFile;
@@ -75,9 +76,9 @@ public class OverflowProcessor extends TsFileProcessor {
     return true;
   }
 
-  public OperationResult update(UpdatePlan plan) {
-    return null;
+  @Override
+  protected String getLogSuffix() {
+    return IoTDBConstant.OVERFLOW_LOG_NODE_SUFFIX;
   }
-
 
 }

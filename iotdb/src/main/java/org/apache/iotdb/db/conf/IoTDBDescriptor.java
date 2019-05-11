@@ -252,6 +252,9 @@ public class IoTDBDescriptor {
             conf.getZoneID(), e);
       }
 
+      conf.setQueryMemoryLimit(Long.parseLong(properties.getProperty("query_memory_limit",
+          Long.toString(conf.getQueryMemoryLimit()))));
+
     } catch (IOException e) {
       LOGGER.warn("Cannot load config file because, use default configuration", e);
     } catch (Exception e) {

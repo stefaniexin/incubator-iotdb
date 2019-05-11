@@ -64,6 +64,7 @@ import org.apache.iotdb.db.engine.version.VersionController;
 import org.apache.iotdb.db.exception.BufferWriteProcessorException;
 import org.apache.iotdb.db.qp.constant.DatetimeUtils;
 import org.apache.iotdb.db.qp.physical.crud.InsertPlan;
+import org.apache.iotdb.db.qp.physical.crud.UpdatePlan;
 import org.apache.iotdb.db.query.context.QueryContext;
 import org.apache.iotdb.db.utils.ImmediateFuture;
 import org.apache.iotdb.db.utils.MemUtils;
@@ -75,6 +76,7 @@ import org.apache.iotdb.tsfile.file.metadata.ChunkMetaData;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.read.common.Path;
 import org.apache.iotdb.tsfile.read.expression.impl.SingleSeriesExpression;
+import org.apache.iotdb.tsfile.utils.Pair;
 import org.apache.iotdb.tsfile.write.schema.FileSchema;
 import org.apache.iotdb.tsfile.write.schema.MeasurementSchema;
 import org.slf4j.Logger;
@@ -221,7 +223,7 @@ public class TsFileProcessor extends Processor {
     if (IoTDBDescriptor.getInstance().getConfig().isEnableWal()) {
       try {
         logNode = MultiFileLogNodeManager.getInstance().getNode(
-            processorName + IoTDBConstant.BUFFERWRITE_LOG_NODE_SUFFIX,
+            processorName + getLogSuffix(),
             writer.getRestoreFilePath(),
             FileNodeManager.getInstance().getRestoreFilePath(processorName));
       } catch (IOException e) {
@@ -337,6 +339,14 @@ public class TsFileProcessor extends Processor {
       maxWrittenTimeForEachDeviceInCurrentFile.put(deviceId, time);
     }
     valueCount++;
+  }
+
+  public OperationResult update(UpdatePlan plan) {
+    String device = plan.getPath().getDevice();
+    String measurement = plan.getPath().getMeasurement();
+    List<Pair<Long, Long>> intervals = plan.getIntervals();
+    //TODO modify workMemtable, flushMemtable, and existing TsFiles
+    return OperationResult.WRITE_REJECT_BY_MEM;
   }
 
   /**
@@ -794,45 +804,17 @@ public class TsFileProcessor extends Processor {
     return Directories.getInstance().getNextFolderForTsfile();
   }
 
+  protected String getLogSuffix() {
+    return IoTDBConstant.BUFFERWRITE_LOG_NODE_SUFFIX;
+  }
+
   @Override
   public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (!(o instanceof TsFileProcessor)) {
-      return false;
-    }
-    if (!super.equals(o)) {
-      return false;
-    }
-    TsFileProcessor that = (TsFileProcessor) o;
-    return fileNamePrefix == that.fileNamePrefix &&
-        valueCount == that.valueCount &&
-        Objects.equals(fileSchemaRef, that.fileSchemaRef) &&
-        Objects.equals(flushFuture, that.flushFuture) &&
-        Objects.equals(flushQueryLock, that.flushQueryLock) &&
-        Objects.equals(memSize, that.memSize) &&
-        Objects.equals(workMemTable, that.workMemTable) &&
-        Objects.equals(flushMemTable, that.flushMemTable) &&
-        Objects.equals(writer, that.writer) &&
-        Objects.equals(beforeFlushAction, that.beforeFlushAction) &&
-        Objects.equals(afterCloseAction, that.afterCloseAction) &&
-        Objects.equals(afterFlushAction, that.afterFlushAction) &&
-        Objects.equals(insertFile, that.insertFile) &&
-        Objects.equals(currentResource, that.currentResource) &&
-        Objects.equals(tsFileResources, that.tsFileResources) &&
-        Objects.equals(inverseIndexOfResource, that.inverseIndexOfResource) &&
-        Objects.equals(lastFlushedTimeForEachDevice, that.lastFlushedTimeForEachDevice) &&
-        Objects.equals(logNode, that.logNode) &&
-        Objects.equals(versionController, that.versionController);
+    return this == o;
   }
 
   @Override
   public int hashCode() {
-    return Objects
-        .hash(super.hashCode(), fileSchemaRef, flushFuture, flushQueryLock, memSize, fileNamePrefix,
-            valueCount, workMemTable, flushMemTable, writer, beforeFlushAction, afterCloseAction,
-            afterFlushAction, insertFile, currentResource, tsFileResources, inverseIndexOfResource,
-            lastFlushedTimeForEachDevice, logNode, versionController);
+    return super.hashCode();
   }
 }

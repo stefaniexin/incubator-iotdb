@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.engine.sgmanager.OperationResult;
 import org.apache.iotdb.db.engine.tsfiledata.TsFileProcessorTest;
 import org.apache.iotdb.db.engine.version.SysTimeVersionController;
@@ -48,6 +49,7 @@ import org.junit.Test;
 public class OverflowProcessorTest extends TsFileProcessorTest {
   @Before
   public void setUp() throws Exception {
+    IoTDBDescriptor.getInstance().getConfig().setEnableWal(true);
     super.setUp();
     processor.close();
     processor = new OverflowProcessor("root.test", doNothingAction, doNothingAction, doNothingAction,
