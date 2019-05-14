@@ -50,6 +50,7 @@ import org.apache.iotdb.db.engine.querycontext.OverflowSeriesDataSource;
 import org.apache.iotdb.db.engine.querycontext.ReadOnlyMemChunk;
 import org.apache.iotdb.db.engine.version.VersionController;
 import org.apache.iotdb.db.exception.OverflowProcessorException;
+import org.apache.iotdb.db.exception.TsFileProcessorException;
 import org.apache.iotdb.db.qp.constant.DatetimeUtils;
 import org.apache.iotdb.db.query.context.QueryContext;
 import org.apache.iotdb.db.query.control.FileReaderManager;
@@ -122,8 +123,7 @@ public class OverflowProcessor extends Processor {
     if (IoTDBDescriptor.getInstance().getConfig().isEnableWal()) {
       logNode = MultiFileLogNodeManager.getInstance().getNode(
           processorName + IoTDBConstant.OVERFLOW_LOG_NODE_SUFFIX,
-          getOverflowRestoreFile(),
-          FileNodeManager.getInstance().getRestoreFilePath(processorName));
+          getOverflowRestoreFile());
     }
   }
 
@@ -587,7 +587,7 @@ public class OverflowProcessor extends Processor {
   }
 
   @Override
-  public void close() throws OverflowProcessorException {
+  public void close() throws TsFileProcessorException {
     if (isClosed) {
       return;
     }
@@ -602,7 +602,7 @@ public class OverflowProcessor extends Processor {
           getProcessorName(), e);
       Thread.currentThread().interrupt();
     } catch (IOException e) {
-      throw new OverflowProcessorException(e);
+      throw new TsFileProcessorException(e);
     }
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("The overflow processor {} ends close operation.", getProcessorName());
@@ -618,7 +618,7 @@ public class OverflowProcessor extends Processor {
     try {
       clear();
     } catch (IOException e) {
-      throw new OverflowProcessorException(e);
+      throw new TsFileProcessorException(e);
     }
     isClosed = true;
   }

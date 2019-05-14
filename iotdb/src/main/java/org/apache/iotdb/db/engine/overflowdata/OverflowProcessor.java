@@ -20,25 +20,12 @@
 package org.apache.iotdb.db.engine.overflowdata;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import org.apache.iotdb.db.conf.IoTDBConstant;
 import org.apache.iotdb.db.conf.directories.Directories;
-import org.apache.iotdb.db.engine.bufferwrite.Action;
-import org.apache.iotdb.db.engine.querycontext.OverflowInsertFile;
-import org.apache.iotdb.db.engine.querycontext.OverflowSeriesDataSource;
-import org.apache.iotdb.db.engine.querycontext.ReadOnlyMemChunk;
-import org.apache.iotdb.db.engine.sgmanager.OperationResult;
 import org.apache.iotdb.db.engine.tsfiledata.TsFileProcessor;
 import org.apache.iotdb.db.engine.version.VersionController;
-import org.apache.iotdb.db.exception.BufferWriteProcessorException;
-import org.apache.iotdb.db.qp.physical.crud.UpdatePlan;
-import org.apache.iotdb.db.query.context.QueryContext;
-import org.apache.iotdb.tsfile.file.metadata.ChunkMetaData;
-import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
-import org.apache.iotdb.tsfile.read.common.Path;
-import org.apache.iotdb.tsfile.utils.Pair;
+import org.apache.iotdb.db.exception.TsFileProcessorException;
 import org.apache.iotdb.tsfile.write.schema.FileSchema;
 
 public class OverflowProcessor extends TsFileProcessor {
@@ -48,16 +35,12 @@ public class OverflowProcessor extends TsFileProcessor {
    *
    * @param processorName processor name
    * @param fileSchemaRef file schema
-   * @throws BufferWriteProcessorException BufferWriteProcessorException
+   * @throws TsFileProcessorException TsFileProcessorException
    */
-  public OverflowProcessor(String processorName,
-      Action beforeFlushAction,
-      Action afterFlushAction,
-      Action afterCloseAction,
-      VersionController versionController,
+  public OverflowProcessor(String processorName, VersionController versionController,
       FileSchema fileSchemaRef)
-      throws BufferWriteProcessorException, IOException {
-    super(processorName, beforeFlushAction, afterFlushAction, afterCloseAction, versionController,
+      throws TsFileProcessorException, IOException {
+    super(processorName, versionController,
         fileSchemaRef);
   }
 
@@ -80,5 +63,4 @@ public class OverflowProcessor extends TsFileProcessor {
   protected String getLogSuffix() {
     return IoTDBConstant.OVERFLOW_LOG_NODE_SUFFIX;
   }
-
 }

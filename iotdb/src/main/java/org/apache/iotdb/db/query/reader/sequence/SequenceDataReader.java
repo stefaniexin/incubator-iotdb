@@ -22,7 +22,7 @@ package org.apache.iotdb.db.query.reader.sequence;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.iotdb.db.engine.querycontext.GlobalSortedSeriesDataSource;
+import org.apache.iotdb.db.engine.querycontext.SeriesDataSource;
 import org.apache.iotdb.db.query.context.QueryContext;
 import org.apache.iotdb.db.query.reader.IAggregateReader;
 import org.apache.iotdb.db.query.reader.IBatchReader;
@@ -53,7 +53,7 @@ public class SequenceDataReader implements IBatchReader, IAggregateReader {
    * @param isReverse true-traverse chunks from behind forward, false-traverse chunks from front to
    * back.
    */
-  public SequenceDataReader(GlobalSortedSeriesDataSource sources, Filter filter,
+  public SequenceDataReader(SeriesDataSource sources, Filter filter,
       QueryContext context, boolean isReverse) throws IOException {
     seriesReaders = new ArrayList<>();
 
@@ -100,7 +100,7 @@ public class SequenceDataReader implements IBatchReader, IAggregateReader {
   /**
    * init with globalSortedSeriesDataSource, filter, context and isReverse.
    */
-  public SequenceDataReader(GlobalSortedSeriesDataSource sources, Filter filter,
+  public SequenceDataReader(SeriesDataSource sources, Filter filter,
       QueryContext context) throws IOException {
     this(sources, filter, context, false);
   }

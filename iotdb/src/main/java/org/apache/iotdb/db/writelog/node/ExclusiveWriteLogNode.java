@@ -72,15 +72,13 @@ public class ExclusiveWriteLogNode implements WriteLogNode, Comparable<Exclusive
    *
    * @param identifier             ExclusiveWriteLogNode identifier
    * @param restoreFilePath        restore file path
-   * @param processorStoreFilePath processor store file path
    */
-  public ExclusiveWriteLogNode(String identifier, String restoreFilePath,
-                               String processorStoreFilePath) {
+  public ExclusiveWriteLogNode(String identifier, String restoreFilePath) {
     this.identifier = identifier;
     this.logDirectory = config.getWalFolder() + File.separator + this.identifier;
     new File(logDirectory).mkdirs();
 
-    recoverPerformer = new ExclusiveLogRecoverPerformer(restoreFilePath, processorStoreFilePath,
+    recoverPerformer = new ExclusiveLogRecoverPerformer(restoreFilePath,
         this);
     currentFileWriter = new LogWriter(logDirectory + File.separator + WAL_FILE_NAME);
   }

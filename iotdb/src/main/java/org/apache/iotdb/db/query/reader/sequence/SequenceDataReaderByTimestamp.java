@@ -22,7 +22,7 @@ package org.apache.iotdb.db.query.reader.sequence;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.iotdb.db.engine.querycontext.GlobalSortedSeriesDataSource;
+import org.apache.iotdb.db.engine.querycontext.SeriesDataSource;
 import org.apache.iotdb.db.query.context.QueryContext;
 import org.apache.iotdb.db.query.reader.mem.MemChunkReaderByTimestamp;
 import org.apache.iotdb.db.query.reader.merge.EngineReaderByTimeStamp;
@@ -36,7 +36,7 @@ public class SequenceDataReaderByTimestamp implements EngineReaderByTimeStamp {
   /**
    * init with globalSortedSeriesDataSource and filter.
    */
-  public SequenceDataReaderByTimestamp(GlobalSortedSeriesDataSource sources, QueryContext context)
+  public SequenceDataReaderByTimestamp(SeriesDataSource sources, QueryContext context)
       throws IOException {
     seriesReaders = new ArrayList<>();
 

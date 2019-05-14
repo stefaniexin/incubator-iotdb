@@ -55,7 +55,6 @@ public class ExclusiveLogRecoverPerformer implements RecoverPerformer {
   private ExclusiveWriteLogNode writeLogNode;
   private String recoveryFlagPath;
   private String restoreFilePath;
-  private String processorStoreFilePath;
   private RecoverStage currStage;
   private LogReplayer replayer = new ConcreteLogReplayer();
   private RecoverPerformer fileNodeRecoverPerformer;
@@ -65,10 +64,8 @@ public class ExclusiveLogRecoverPerformer implements RecoverPerformer {
   /**
    * constructor of ExclusiveLogRecoverPerformer.
    */
-  public ExclusiveLogRecoverPerformer(String restoreFilePath, String processorStoreFilePath,
-      ExclusiveWriteLogNode logNode) {
+  public ExclusiveLogRecoverPerformer(String restoreFilePath, ExclusiveWriteLogNode logNode) {
     this.restoreFilePath = restoreFilePath;
-    this.processorStoreFilePath = processorStoreFilePath;
     this.writeLogNode = logNode;
     this.fileNodeRecoverPerformer = new FileNodeRecoverPerformer(writeLogNode.getIdentifier());
     this.isOverflow = logNode.getFileNodeName().contains(IoTDBConstant.OVERFLOW_LOG_NODE_SUFFIX);
@@ -207,19 +204,6 @@ public class ExclusiveLogRecoverPerformer implements RecoverPerformer {
       }
     }
 
-    String recoverProcessorStoreFilePath = processorStoreFilePath + RECOVER_SUFFIX;
-    File recoverProcessorStoreFile = new File(recoverProcessorStoreFilePath);
-    File processorStoreFile = new File(processorStoreFilePath);
-    if (!recoverProcessorStoreFile.exists() && processorStoreFile.exists()) {
-      try {
-        FileUtils.copyFile(processorStoreFile, recoverProcessorStoreFile);
-      } catch (Exception e) {
-        logger.error("Log node {} cannot backup processor file",
-            writeLogNode.getLogDirectory(), e);
-        throw new RecoverException("Cannot backup processor file, recovery aborted.");
-      }
-    }
-
     setFlag(BACK_UP);
     currStage = RECOVER_FILE;
     logger.info("Log node {} backup ended", writeLogNode.getLogDirectory());
@@ -237,19 +221,6 @@ public class ExclusiveLogRecoverPerformer implements RecoverPerformer {
       logger.error("Log node {} cannot recover restore file.",
           writeLogNode.getLogDirectory(), e);
       throw new RecoverException("Cannot recover restore file, recovery aborted.");
-    }
-
-    String recoverProcessorStoreFilePath = processorStoreFilePath + RECOVER_SUFFIX;
-    File recoverProcessorStoreFile = new File(recoverProcessorStoreFilePath);
-    try {
-      if (recoverProcessorStoreFile.exists()) {
-        FileUtils.copyFile(recoverProcessorStoreFile, new File(processorStoreFilePath));
-      }
-    } catch (Exception e) {
-      logger.error("Log node {} cannot recover processor file, because{}",
-          writeLogNode.getLogDirectory(),
-          e.getMessage());
-      throw new RecoverException("Cannot recover processor file, recovery aborted.");
     }
 
     fileNodeRecoverPerformer.recover();
@@ -335,13 +306,6 @@ public class ExclusiveLogRecoverPerformer implements RecoverPerformer {
         logger
             .error("Log node {} cannot delete backup restore file", writeLogNode.getLogDirectory());
         failedFiles.add(recoverRestoreFilePath);
-    }
-    String recoverProcessorStoreFilePath = processorStoreFilePath + RECOVER_SUFFIX;
-    File recoverProcessorStoreFile = new File(recoverProcessorStoreFilePath);
-    if (recoverProcessorStoreFile.exists() && !recoverProcessorStoreFile.delete()) {
-        logger.error("Log node {} cannot delete backup processor store file",
-            writeLogNode.getLogDirectory());
-        failedFiles.add(recoverProcessorStoreFilePath);
     }
     // clean log file
     File oldLogFile = new File(

@@ -43,6 +43,7 @@ import org.apache.iotdb.db.engine.pool.FlushManager;
 import org.apache.iotdb.db.engine.querycontext.ReadOnlyMemChunk;
 import org.apache.iotdb.db.engine.version.VersionController;
 import org.apache.iotdb.db.exception.BufferWriteProcessorException;
+import org.apache.iotdb.db.exception.TsFileProcessorException;
 import org.apache.iotdb.db.qp.constant.DatetimeUtils;
 import org.apache.iotdb.db.utils.ImmediateFuture;
 import org.apache.iotdb.db.utils.MemUtils;
@@ -399,7 +400,7 @@ public class BufferWriteProcessor extends Processor {
   }
 
   @Override
-  public void close() throws BufferWriteProcessorException {
+  public void close() throws TsFileProcessorException {
     if (isClosed) {
       return;
     }
@@ -431,11 +432,11 @@ public class BufferWriteProcessor extends Processor {
     } catch (IOException e) {
       LOGGER.error("Close the bufferwrite processor error, the bufferwrite is {}.",
           getProcessorName(), e);
-      throw new BufferWriteProcessorException(e);
+      throw new TsFileProcessorException(e);
     } catch (Exception e) {
       LOGGER
           .error("Failed to close the bufferwrite processor when calling the action function.", e);
-      throw new BufferWriteProcessorException(e);
+      throw new TsFileProcessorException(e);
     }
   }
 

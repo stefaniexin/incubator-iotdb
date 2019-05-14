@@ -17,17 +17,22 @@
  * under the License.
  */
 
-package org.apache.iotdb.db.engine.sgmanager;
+package org.apache.iotdb.db.exception;
 
-public enum OperationResult {
-  //success
-  WRITE_SUCCESS,
-  //success but the memory is in warning status
-  WRITE_IN_WARNING_MEM,
-  //the write operation is reject because of the timestamp is not allowed
-  WRITE_REJECT_BY_TIME,
-  //the write operation is reject because there is no available memory
-  WRITE_REJECT_BY_MEM,
-  //attempts to write a closed FileProcessor
-  WRITE_REJECT_BY_CLOSED_PROCESSOR,
+public class TsFileProcessorException extends Exception {
+
+  public TsFileProcessorException() {
+  }
+
+  public TsFileProcessorException(String message) {
+    super(message);
+  }
+
+  public TsFileProcessorException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public TsFileProcessorException(Throwable cause) {
+    super(cause);
+  }
 }

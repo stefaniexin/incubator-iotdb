@@ -25,6 +25,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.iotdb.db.engine.bufferwrite.BufferWriteProcessor;
 import org.apache.iotdb.db.engine.filenode.FileNodeProcessor;
 import org.apache.iotdb.db.exception.ProcessorException;
+import org.apache.iotdb.db.exception.TsFileProcessorException;
 
 /**
  * Processor is used for implementing different processor with different operation.<br>
@@ -185,7 +186,7 @@ public abstract class Processor {
    * @throws IOException
    * @throws ProcessorException
    */
-  public abstract void close() throws ProcessorException;
+  public abstract void close() throws TsFileProcessorException;
 
   public abstract long memoryUsage();
 }

@@ -106,12 +106,11 @@ public class MultiFileLogNodeManager implements WriteLogNodeManager, IService {
 
 
   @Override
-  public WriteLogNode getNode(String identifier, String restoreFilePath,
-      String processorStoreFilePath)
+  public WriteLogNode getNode(String identifier, String restoreFilePath)
       throws IOException {
     WriteLogNode node = nodeMap.get(identifier);
-    if (node == null && restoreFilePath != null && processorStoreFilePath != null) {
-      node = new ExclusiveWriteLogNode(identifier, restoreFilePath, processorStoreFilePath);
+    if (node == null && restoreFilePath != null) {
+      node = new ExclusiveWriteLogNode(identifier, restoreFilePath);
       WriteLogNode oldNode = nodeMap.putIfAbsent(identifier, node);
       if (oldNode != null) {
         return oldNode;

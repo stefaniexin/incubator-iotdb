@@ -35,9 +35,8 @@ public interface WriteLogNodeManager {
    *
    * @param identifier -identifier, the format: "{storageGroupName}-bufferwrite/overflow"
    * @param restoreFilePath -restore file path of the data file. e.g, data/settled/{storageGroupName}/{tsfileName}.restore
-   * @param processorStoreFilePath -processor store file path. e.g., data/system/info/{storageGroupName}/{storageGroupName}.restore
    */
-  WriteLogNode getNode(String identifier, String restoreFilePath, String processorStoreFilePath)
+  WriteLogNode getNode(String identifier, String restoreFilePath)
       throws IOException;
 
   /**

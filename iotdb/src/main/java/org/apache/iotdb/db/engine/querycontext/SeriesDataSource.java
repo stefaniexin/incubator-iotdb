@@ -22,7 +22,7 @@ import java.util.List;
 import org.apache.iotdb.db.engine.filenode.TsFileResource;
 import org.apache.iotdb.tsfile.read.common.Path;
 
-public class GlobalSortedSeriesDataSource {
+public class SeriesDataSource {
 
   private Path seriesPath;
 
@@ -35,7 +35,7 @@ public class GlobalSortedSeriesDataSource {
   // seq mem-table
   private ReadOnlyMemChunk readableChunk;
 
-  public GlobalSortedSeriesDataSource(Path seriesPath, List<TsFileResource> sealedTsFiles,
+  public SeriesDataSource(Path seriesPath, List<TsFileResource> sealedTsFiles,
       UnsealedTsFile unsealedTsFile,
       ReadOnlyMemChunk readableChunk) {
     this.seriesPath = seriesPath;

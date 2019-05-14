@@ -58,7 +58,7 @@ import org.apache.iotdb.db.engine.modification.Modification;
 import org.apache.iotdb.db.engine.modification.ModificationFile;
 import org.apache.iotdb.db.engine.overflow.io.OverflowProcessor;
 import org.apache.iotdb.db.engine.pool.MergeManager;
-import org.apache.iotdb.db.engine.querycontext.GlobalSortedSeriesDataSource;
+import org.apache.iotdb.db.engine.querycontext.SeriesDataSource;
 import org.apache.iotdb.db.engine.querycontext.OverflowInsertFile;
 import org.apache.iotdb.db.engine.querycontext.OverflowSeriesDataSource;
 import org.apache.iotdb.db.engine.querycontext.QueryDataSource;
@@ -72,6 +72,7 @@ import org.apache.iotdb.db.exception.FileNodeProcessorException;
 import org.apache.iotdb.db.exception.OverflowProcessorException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.ProcessorException;
+import org.apache.iotdb.db.exception.TsFileProcessorException;
 import org.apache.iotdb.db.metadata.MManager;
 import org.apache.iotdb.db.monitor.IStatistic;
 import org.apache.iotdb.db.monitor.MonitorConstants;
@@ -143,7 +144,7 @@ public class FileNodeProcessor extends Processor implements IStatistic {
    */
   private long lastMergeTime = -1;
   private BufferWriteProcessor bufferWriteProcessor = null;
-  private OverflowProcessor overflowProcessor = null;
+  private OverflowProcessor overflowProcessor1 = null;
   private Set<Integer> oldMultiPassTokenSet = null;
   private Set<Integer> newMultiPassTokenSet = new HashSet<>();
 
@@ -484,12 +485,10 @@ public class FileNodeProcessor extends Processor implements IStatistic {
     // restore the overflow processor
     LOGGER.info("The filenode processor {} will recovery the overflow processor.",
         getProcessorName());
-    parameters.put(FileNodeConstants.OVERFLOW_FLUSH_ACTION, overflowFlushAction);
-    parameters.put(FileNodeConstants.FILENODE_PROCESSOR_FLUSH_ACTION, flushFileNodeProcessorAction);
     try {
-      overflowProcessor = new OverflowProcessor(getProcessorName(), parameters, fileSchema,
-          versionController);
-    } catch (IOException e) {
+      overflowProcessor1 = new OverflowProcessor(getProcessorName(), overflowFlushAction,
+          flushFileNodeProcessorAction, ()->{}, versionController, fileSchema);
+    } catch (TsFileProcessorException | IOException e) {
       LOGGER.error("The filenode processor {} failed to recovery the overflow processor.",
           getProcessorName());
       throw new FileNodeProcessorException(e);
@@ -554,19 +553,20 @@ public class FileNodeProcessor extends Processor implements IStatistic {
   /**
    * get overflow processor by processor name.
    */
-  public OverflowProcessor getOverflowProcessor(String processorName) throws IOException {
-    if (overflowProcessor == null) {
+  public OverflowProcessor getOverflowProcessor(String processorName)
+      throws IOException, TsFileProcessorException {
+    if (overflowProcessor1 == null) {
       Map<String, Action> params = new HashMap<>();
       // construct processor or restore
       params.put(FileNodeConstants.OVERFLOW_FLUSH_ACTION, overflowFlushAction);
       params
           .put(FileNodeConstants.FILENODE_PROCESSOR_FLUSH_ACTION, flushFileNodeProcessorAction);
-      overflowProcessor = new OverflowProcessor(processorName, params, fileSchema,
-          versionController);
-    } else if (overflowProcessor.isClosed()) {
-      overflowProcessor.reopen();
+      overflowProcessor1 = new OverflowProcessor(getProcessorName(), overflowFlushAction,
+          flushFileNodeProcessorAction, ()->{}, versionController, fileSchema);
+    } else if (overflowProcessor1.isClosed()) {
+      overflowProcessor1.reopen();
     }
-    return overflowProcessor;
+    return overflowProcessor1;
   }
 
   /**
@@ -833,10 +833,10 @@ public class FileNodeProcessor extends Processor implements IStatistic {
 
       unsealedTsFile.setTimeSeriesChunkMetaDatas(bufferwritedata.right);
     }
-    GlobalSortedSeriesDataSource globalSortedSeriesDataSource = new GlobalSortedSeriesDataSource(
+    SeriesDataSource seriesDataSource = new SeriesDataSource(
         new Path(deviceId + "." + measurementId), bufferwriteDataInFiles, unsealedTsFile,
         bufferwritedata.left);
-    return new QueryDataSource(globalSortedSeriesDataSource, overflowSeriesDataSource);
+    return new QueryDataSource(seriesDataSource, overflowSeriesDataSource);
 
   }
 

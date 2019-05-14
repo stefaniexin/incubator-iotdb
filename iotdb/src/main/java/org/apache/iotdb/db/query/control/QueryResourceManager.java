@@ -28,7 +28,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.iotdb.db.engine.filenode.FileNodeManager;
-import org.apache.iotdb.db.engine.querycontext.GlobalSortedSeriesDataSource;
+import org.apache.iotdb.db.engine.querycontext.SeriesDataSource;
 import org.apache.iotdb.db.engine.querycontext.OverflowSeriesDataSource;
 import org.apache.iotdb.db.engine.querycontext.QueryDataSource;
 import org.apache.iotdb.db.engine.tsfiledata.TsFileProcessor;
@@ -212,7 +212,7 @@ public class QueryResourceManager {
     overflowSeriesDataSource.setOverflowInsertFileList(Collections.EMPTY_LIST);
 
     SingleSeriesExpression singleSeriesExpression = new SingleSeriesExpression(selectedPath, null);
-    GlobalSortedSeriesDataSource dataSource =processor.query(singleSeriesExpression, context);
+    SeriesDataSource dataSource =processor.query(singleSeriesExpression, context);
     QueryDataSource queryDataSource = new QueryDataSource(dataSource, overflowSeriesDataSource);
     // add used files to current thread request cached map
     filePathsManager.addUsedFilesForGivenJob(context.getJobId(), queryDataSource);
