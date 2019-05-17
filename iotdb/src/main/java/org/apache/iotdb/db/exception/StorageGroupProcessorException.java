@@ -18,23 +18,23 @@
  */
 package org.apache.iotdb.db.exception;
 
-public class FileNodeManagerException extends Exception {
+public class StorageGroupProcessorException extends Exception {
 
-  private static final long serialVersionUID = 9001649171768311032L;
+  private static final long serialVersionUID = 4182064660150694060L;
 
-  public FileNodeManagerException() {
+  public StorageGroupProcessorException() {
     super();
   }
 
-  public FileNodeManagerException(String message, Throwable cause) {
+  public StorageGroupProcessorException(String message, Throwable cause) {
     super(message, cause);
   }
 
-  public FileNodeManagerException(String message) {
+  public StorageGroupProcessorException(String message) {
     super(message);
   }
 
-  public FileNodeManagerException(Throwable cause) {
+  public StorageGroupProcessorException(Throwable cause) {
     super(cause);
   }
 

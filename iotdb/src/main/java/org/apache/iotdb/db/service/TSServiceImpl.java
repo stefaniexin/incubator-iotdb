@@ -36,12 +36,11 @@ import org.apache.iotdb.db.conf.IoTDBConstant;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.engine.filenode.FileNodeManager;
 import org.apache.iotdb.db.exception.ArgsErrorException;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.ProcessorException;
 import org.apache.iotdb.db.exception.qp.IllegalASTFormatException;
 import org.apache.iotdb.db.exception.qp.QueryProcessorException;
-import org.apache.iotdb.db.metadata.MGraph;
 import org.apache.iotdb.db.metadata.MManager;
 import org.apache.iotdb.db.metadata.Metadata;
 import org.apache.iotdb.db.qp.QueryProcessor;
@@ -191,13 +190,13 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
       releaseQueryResource(req);
 
       clearAllStatusForCurrentRequest();
-    } catch (FileNodeManagerException e) {
+    } catch (StorageGroupManagerException e) {
       LOGGER.error("Error in closeOperation : {}", e.getMessage());
     }
     return new TSCloseOperationResp(new TS_Status(TS_StatusCode.SUCCESS_STATUS));
   }
 
-  private void releaseQueryResource(TSCloseOperationReq req) throws FileNodeManagerException {
+  private void releaseQueryResource(TSCloseOperationReq req) throws StorageGroupManagerException {
     Map<Long, QueryContext> contextMap = contextMapLocal.get();
     if (contextMap == null) {
       return;
@@ -378,7 +377,7 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
       case "flush":
         try {
           FileNodeManager.getInstance().closeAll();
-        } catch (FileNodeManagerException e) {
+        } catch (StorageGroupManagerException e) {
           LOGGER.error("meet error while FileNodeManager closing all!", e);
           throw new IOException(e);
         }
@@ -386,7 +385,7 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
       case "merge":
         try {
           FileNodeManager.getInstance().mergeAll();
-        } catch (FileNodeManagerException e) {
+        } catch (StorageGroupManagerException e) {
           LOGGER.error("meet error while FileNodeManager merging all!", e);
           throw new IOException(e);
         }
@@ -628,7 +627,7 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
   }
 
   private QueryDataSet createNewDataSet(String statement, int fetchSize, TSFetchResultsReq req)
-      throws PathErrorException, QueryFilterOptimizationException, FileNodeManagerException,
+      throws PathErrorException, QueryFilterOptimizationException, StorageGroupManagerException,
       ProcessorException, IOException {
     PhysicalPlan physicalPlan = queryStatus.get().get(statement);
     processor.getExecutor().setFetchSize(fetchSize);

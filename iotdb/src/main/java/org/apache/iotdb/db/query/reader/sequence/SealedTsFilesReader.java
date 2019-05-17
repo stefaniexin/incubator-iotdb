@@ -24,24 +24,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.apache.iotdb.db.engine.filenode.TsFileResource;
-import org.apache.iotdb.db.engine.modification.Modification;
 import org.apache.iotdb.db.query.context.QueryContext;
-import org.apache.iotdb.db.query.control.FileReaderManager;
 import org.apache.iotdb.db.query.reader.IAggregateReader;
 import org.apache.iotdb.db.query.reader.IBatchReader;
 import org.apache.iotdb.db.utils.QueryUtils;
 import org.apache.iotdb.tsfile.file.header.PageHeader;
-import org.apache.iotdb.tsfile.file.metadata.ChunkMetaData;
-import org.apache.iotdb.tsfile.read.TsFileSequenceReader;
 import org.apache.iotdb.tsfile.read.common.BatchData;
 import org.apache.iotdb.tsfile.read.common.Path;
-import org.apache.iotdb.tsfile.read.controller.ChunkLoader;
-import org.apache.iotdb.tsfile.read.controller.ChunkLoaderImpl;
-import org.apache.iotdb.tsfile.read.controller.MetadataQuerierByFileImpl;
 import org.apache.iotdb.tsfile.read.filter.basic.Filter;
 import org.apache.iotdb.tsfile.read.reader.series.FileSeriesReader;
-import org.apache.iotdb.tsfile.read.reader.series.FileSeriesReaderWithFilter;
-import org.apache.iotdb.tsfile.read.reader.series.FileSeriesReaderWithoutFilter;
 
 public class SealedTsFilesReader implements IBatchReader, IAggregateReader {
 
@@ -132,31 +123,10 @@ public class SealedTsFilesReader implements IBatchReader, IAggregateReader {
 
   private void initSingleTsFileReader(TsFileResource tsfile, QueryContext context)
       throws IOException {
-
-    // to avoid too many opened files
-    TsFileSequenceReader tsFileReader = FileReaderManager.getInstance()
-        .get(tsfile.getFilePath(), true);
-
-    MetadataQuerierByFileImpl metadataQuerier = new MetadataQuerierByFileImpl(tsFileReader);
-    List<ChunkMetaData> metaDataList = metadataQuerier.getChunkMetaDataList(seriesPath);
-
-    List<Modification> pathModifications = context.getPathModifications(tsfile.getModFile(),
-        seriesPath.getFullPath());
-    if (!pathModifications.isEmpty()) {
-      QueryUtils.modifyChunkMetaData(metaDataList, pathModifications);
+    if (seriesReader != null) {
+      seriesReader.close();
     }
-
-    ChunkLoader chunkLoader = new ChunkLoaderImpl(tsFileReader);
-
-    if (isReverse) {
-      Collections.reverse(metaDataList);
-    }
-
-    if (filter == null) {
-      seriesReader = new FileSeriesReaderWithoutFilter(chunkLoader, metaDataList);
-    } else {
-      seriesReader = new FileSeriesReaderWithFilter(chunkLoader, metaDataList, filter);
-    }
+    seriesReader = QueryUtils.createTsFileReader(tsfile, context, seriesPath, isReverse, filter);
   }
 
   @Override

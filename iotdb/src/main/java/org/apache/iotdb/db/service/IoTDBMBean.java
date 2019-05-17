@@ -18,10 +18,10 @@
  */
 package org.apache.iotdb.db.service;
 
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 
 @FunctionalInterface
 public interface IoTDBMBean {
 
-  void stop() throws FileNodeManagerException;
+  void stop() throws StorageGroupManagerException;
 }

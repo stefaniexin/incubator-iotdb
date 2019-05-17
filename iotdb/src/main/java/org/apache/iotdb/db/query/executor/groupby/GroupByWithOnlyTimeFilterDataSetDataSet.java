@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.iotdb.db.engine.querycontext.QueryDataSource;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.ProcessorException;
 import org.apache.iotdb.db.query.aggregation.AggreResultData;
@@ -74,7 +74,7 @@ public class GroupByWithOnlyTimeFilterDataSetDataSet extends GroupByEngineDataSe
    * init reader and aggregate function.
    */
   public void initGroupBy(QueryContext context, List<String> aggres, IExpression expression)
-      throws FileNodeManagerException, PathErrorException, ProcessorException, IOException {
+      throws StorageGroupManagerException, PathErrorException, ProcessorException, IOException {
     initAggreFuction(aggres);
     // init reader
     QueryResourceManager.getInstance().beginQueryOfGivenQueryPaths(jobId, selectedSeries);

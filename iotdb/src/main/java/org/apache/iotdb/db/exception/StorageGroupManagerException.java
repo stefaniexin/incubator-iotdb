@@ -16,18 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.iotdb.db.exception;
 
-package org.apache.iotdb.db.query.reader.overflow;
+public class StorageGroupManagerException extends Exception {
 
-import java.util.LinkedList;
-import java.util.List;
+  private static final long serialVersionUID = 9001649171768311032L;
 
-public class OverflowSeriesMultiFileReader {
-  private String device;
-  private String measurement;
+  public StorageGroupManagerException() {
+    super();
+  }
 
-  //this list should be sorted.
-  private List<ConciseChunkMetadataWithFileName> metadataList = new LinkedList<>();
+  public StorageGroupManagerException(String message, Throwable cause) {
+    super(message, cause);
+  }
 
+  public StorageGroupManagerException(String message) {
+    super(message);
+  }
+
+  public StorageGroupManagerException(Throwable cause) {
+    super(cause);
+  }
 
 }

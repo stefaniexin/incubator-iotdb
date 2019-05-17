@@ -23,6 +23,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.iotdb.db.conf.IoTDBConfig;
+import org.apache.iotdb.db.conf.IoTDBConstant;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.monitor.collector.FileSize;
 import org.apache.iotdb.db.service.Monitor;
@@ -35,7 +36,7 @@ public class MonitorConstants {
   static final String FILENODE_PROCESSOR_CONST = "FILENODE_PROCESSOR_CONST";
   private static final String FILENODE_MANAGER_CONST = "FILENODE_MANAGER_CONST";
   static final String FILE_SIZE_CONST = "FILE_SIZE_CONST";
-  public static final String MONITOR_PATH_SEPARATOR = ".";
+  public static final char MONITOR_PATH_SEPARATOR = IoTDBConstant.PATH_SEPARATOR;
   // statistic for file size statistic module
   private static final String FILE_SIZE = "file_size";
   public static final String FILE_SIZE_STORAGE_GROUP_NAME = STAT_STORAGE_GROUP_PREFIX
@@ -79,7 +80,7 @@ public class MonitorConstants {
     return hashMap;
   }
 
-  public enum FileNodeManagerStatConstants {
+  public enum StorageGroupManagerStatConstants {
     TOTAL_POINTS, TOTAL_REQ_SUCCESS, TOTAL_REQ_FAIL, TOTAL_POINTS_SUCCESS, TOTAL_POINTS_FAIL
   }
 

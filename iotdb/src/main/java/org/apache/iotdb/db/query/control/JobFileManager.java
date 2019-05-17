@@ -56,13 +56,13 @@ public class JobFileManager {
    * Add the unique file paths to sealedFilePathsMap and unsealedFilePathsMap.
    */
   public void addUsedFilesForGivenJob(long jobId, QueryDataSource dataSource) {
-    for (TsFileResource tsFileResource : dataSource.getSeqDataSource().getSealedTsFiles()) {
+    for (TsFileResource tsFileResource : dataSource.getSeqDataSource().getSealedFiles()) {
       String sealedFilePath = tsFileResource.getFilePath();
       addFilePathToMap(jobId, sealedFilePath, true);
     }
 
-    if (dataSource.getSeqDataSource().hasUnsealedTsFile()) {
-      String unSealedFilePath = dataSource.getSeqDataSource().getUnsealedTsFile().getFilePath();
+    if (dataSource.getSeqDataSource().hasUnsealedFile()) {
+      String unSealedFilePath = dataSource.getSeqDataSource().getUnsealedFile().getFilePath();
       addFilePathToMap(jobId, unSealedFilePath, false);
     }
 

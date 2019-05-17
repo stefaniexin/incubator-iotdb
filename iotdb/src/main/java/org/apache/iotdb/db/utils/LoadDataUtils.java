@@ -32,7 +32,7 @@ import java.util.Set;
 import org.apache.iotdb.db.conf.IoTDBConfig;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.engine.filenode.FileNodeManager;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.ProcessorException;
 import org.apache.iotdb.db.metadata.MManager;
@@ -131,7 +131,7 @@ public class LoadDataUtils {
     totalPointCount += record.dataPointList.size();
     String nsPath = null;
     try {
-      nsPath = mmanager.getFileNameByPath(record.deviceId);
+      nsPath = mmanager.getStorageGroupByPath(record.deviceId);
     } catch (PathErrorException e) {
       logger.error("given seriesPath not found, given deviceId:{}", record.deviceId, e);
     }
@@ -152,7 +152,7 @@ public class LoadDataUtils {
     // appeared before, insert directly
     try {
       fileNodeManager.insert(record, false);
-    } catch (FileNodeManagerException e) {
+    } catch (StorageGroupManagerException e) {
       logger.error("failed when insert into fileNodeManager, record:{}", line, e);
     }
   }

@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.iotdb.db.conf.IoTDBConfig;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.engine.filenode.FileNodeManager;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.metadata.MManager;
 import org.apache.iotdb.db.monitor.MonitorConstants.FileSizeConstants;
 import org.apache.iotdb.db.monitor.collector.FileSize;
@@ -139,7 +139,7 @@ public class MonitorTest {
 
     try {
       fManager.deleteAll();
-    } catch (FileNodeManagerException e) {
+    } catch (StorageGroupManagerException e) {
       e.printStackTrace();
       fail(e.getMessage());
     }

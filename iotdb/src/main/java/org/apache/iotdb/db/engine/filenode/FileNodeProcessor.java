@@ -1237,8 +1237,7 @@ public class FileNodeProcessor extends Processor implements IStatistic {
           endTimeMap.put(deviceId, tsFileResource.getEndTime(deviceId));
         }
       }
-      TsFileResource node = new TsFileResource(startTimeMap, endTimeMap,
-          tsFileResource.getOverflowChangeType(), tsFileResource.getFile());
+      TsFileResource node = new TsFileResource(startTimeMap, endTimeMap, tsFileResource.getFile());
       result.add(node);
     }
   }

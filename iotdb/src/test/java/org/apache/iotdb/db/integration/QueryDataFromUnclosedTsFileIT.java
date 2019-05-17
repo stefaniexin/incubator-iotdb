@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.util.Collections;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.engine.filenode.FileNodeManager;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.MetadataArgsErrorException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.StartupException;
@@ -39,7 +39,6 @@ import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSEncoding;
 import org.apache.iotdb.tsfile.read.common.Path;
-import org.apache.iotdb.tsfile.read.common.RowRecord;
 import org.apache.iotdb.tsfile.read.expression.QueryExpression;
 import org.apache.iotdb.tsfile.read.query.dataset.QueryDataSet;
 import org.apache.iotdb.tsfile.write.record.TSRecord;
@@ -55,7 +54,7 @@ public class QueryDataFromUnclosedTsFileIT {
   MManager mManager;
   EngineQueryRouter queryManager;
   @Before
-  public void setUp() throws IOException, FileNodeManagerException, StartupException {
+  public void setUp() throws IOException, StorageGroupManagerException, StartupException {
     EnvironmentUtils.cleanEnv();
     EnvironmentUtils.envSetUp();
     TEST_QUERY_JOB_ID = QueryResourceManager.getInstance().assignJobId();
@@ -68,7 +67,7 @@ public class QueryDataFromUnclosedTsFileIT {
   }
 
   @After
-  public void tearDown() throws FileNodeManagerException, IOException {
+  public void tearDown() throws StorageGroupManagerException, IOException {
     IoTDBDescriptor.getInstance().getConfig().setBufferwriteFileSizeThreshold(bufferWriteFileSize);;
 
     EnvironmentUtils.cleanEnv();
@@ -77,7 +76,7 @@ public class QueryDataFromUnclosedTsFileIT {
 
   @Test
   public void test()
-      throws FileNodeManagerException, IOException, PathErrorException, MetadataArgsErrorException {
+      throws StorageGroupManagerException, IOException, PathErrorException, MetadataArgsErrorException {
     mManager.setStorageLevelToMTree("root.test");
     mManager.addPathToMTree("root.test.d1.s1",  TSDataType.INT32, TSEncoding.RLE, CompressionType.SNAPPY, Collections.emptyMap());
     mManager.addPathToMTree("root.test.d2.s1",  TSDataType.INT32, TSEncoding.RLE, CompressionType.SNAPPY, Collections.emptyMap());

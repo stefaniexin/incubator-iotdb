@@ -32,12 +32,11 @@ import org.apache.iotdb.db.concurrent.ThreadName;
 import org.apache.iotdb.db.conf.IoTDBConfig;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.engine.filenode.FileNodeManager;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
-import org.apache.iotdb.db.exception.MetadataArgsErrorException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.StartupException;
 import org.apache.iotdb.db.metadata.MManager;
-import org.apache.iotdb.db.monitor.MonitorConstants.FileNodeManagerStatConstants;
+import org.apache.iotdb.db.monitor.MonitorConstants.StorageGroupManagerStatConstants;
 import org.apache.iotdb.db.monitor.MonitorConstants.FileNodeProcessorStatConstants;
 import org.apache.iotdb.db.monitor.collector.FileSize;
 import org.apache.iotdb.db.service.IService;
@@ -95,7 +94,7 @@ public class StatMonitor implements IService {
   }
 
   private void initTemporaryStatList() {
-    for (FileNodeManagerStatConstants constants : FileNodeManagerStatConstants.values()) {
+    for (StorageGroupManagerStatConstants constants : StorageGroupManagerStatConstants.values()) {
       temporaryStatList.add(constants.name());
     }
     for (FileNodeProcessorStatConstants constants : FileNodeProcessorStatConstants.values()) {
@@ -359,7 +358,7 @@ public class StatMonitor implements IService {
                 }
               }
             }
-          } catch (FileNodeManagerException e) {
+          } catch (StorageGroupManagerException e) {
             LOGGER
                 .error("Error occurred when deleting statistics information periodically, because",
                     e);
@@ -382,7 +381,7 @@ public class StatMonitor implements IService {
           numInsert.incrementAndGet();
           pointNum = entry.getValue().dataPointList.size();
           numPointsInsert.addAndGet(pointNum);
-        } catch (FileNodeManagerException e) {
+        } catch (StorageGroupManagerException e) {
           numInsertError.incrementAndGet();
           LOGGER.error("Inserting stat points error.", e);
         }

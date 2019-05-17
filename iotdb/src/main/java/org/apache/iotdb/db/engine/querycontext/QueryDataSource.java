@@ -24,10 +24,10 @@ public class QueryDataSource {
   private SeriesDataSource seriesDataSource;
 
   // unSequence data source
-  private OverflowSeriesDataSource overflowSeriesDataSource;
+  private SeriesDataSource overflowSeriesDataSource;
 
   public QueryDataSource(SeriesDataSource seriesDataSource,
-      OverflowSeriesDataSource overflowSeriesDataSource) {
+      SeriesDataSource overflowSeriesDataSource) {
     this.seriesDataSource = seriesDataSource;
     this.overflowSeriesDataSource = overflowSeriesDataSource;
   }
@@ -36,7 +36,7 @@ public class QueryDataSource {
     return seriesDataSource;
   }
 
-  public OverflowSeriesDataSource getOverflowSeriesDataSource() {
+  public SeriesDataSource getOverflowSeriesDataSource() {
     return overflowSeriesDataSource;
   }
 }

@@ -644,7 +644,7 @@ public class MManager {
    *
    * @return A String represented the file name
    */
-  public String getFileNameByPath(String path) throws PathErrorException {
+  public String getStorageGroupByPath(String path) throws PathErrorException {
 
     lock.readLock().lock();
     try {
@@ -659,7 +659,7 @@ public class MManager {
   /**
    * function for getting file name by path.
    */
-  public String getFileNameByPath(MNode node, String path) throws PathErrorException {
+  public String getStorageGroupByPath(MNode node, String path) throws PathErrorException {
 
     lock.readLock().lock();
     try {
@@ -687,11 +687,11 @@ public class MManager {
   /**
    * function for getting all file names.
    */
-  public List<String> getAllFileNames() throws PathErrorException {
+  public List<String> getAllStorageGroups() throws PathErrorException {
 
     lock.readLock().lock();
     try {
-      Map<String, ArrayList<String>> res = getAllPathGroupByFileName(ROOT_NAME);
+      Map<String, ArrayList<String>> res = getAllStorageGroupsByPath(ROOT_NAME);
       return new ArrayList<>(res.keySet());
     } finally {
       lock.readLock().unlock();
@@ -707,7 +707,7 @@ public class MManager {
 
     lock.readLock().lock();
     try {
-      return mgraph.getAllFileNamesByPath(path);
+      return mgraph.getAllStorageGroupsByPath(path);
     } catch (PathErrorException e) {
       throw new PathErrorException(e);
     } finally {
@@ -718,7 +718,7 @@ public class MManager {
   /**
    * return a HashMap contains all the paths separated by File Name.
    */
-  public Map<String, ArrayList<String>> getAllPathGroupByFileName(String path)
+  Map<String, ArrayList<String>> getAllStorageGroupsByPath(String path)
       throws PathErrorException {
     lock.readLock().lock();
     try {
@@ -737,7 +737,7 @@ public class MManager {
     lock.readLock().lock();
     try {
       ArrayList<String> res = new ArrayList<>();
-      Map<String, ArrayList<String>> pathsGroupByFilename = getAllPathGroupByFileName(path);
+      Map<String, ArrayList<String>> pathsGroupByFilename = getAllStorageGroupsByPath(path);
       for (ArrayList<String> ps : pathsGroupByFilename.values()) {
         res.addAll(ps);
       }
@@ -897,7 +897,7 @@ public class MManager {
     lock.readLock().lock();
     try {
       for (Path p : path) {
-        getFileNameByPath(p.getFullPath());
+        getStorageGroupByPath(p.getFullPath());
       }
       return true;
     } finally {
@@ -913,7 +913,7 @@ public class MManager {
     lock.readLock().lock();
     try {
       for (Path p : path) {
-        getFileNameByPath(node, p.getFullPath());
+        getStorageGroupByPath(node, p.getFullPath());
       }
       return true;
     } finally {
@@ -928,7 +928,7 @@ public class MManager {
 
     lock.readLock().lock();
     try {
-      getFileNameByPath(path);
+      getStorageGroupByPath(path);
       return true;
     } finally {
       lock.readLock().unlock();
@@ -942,7 +942,7 @@ public class MManager {
 
     lock.readLock().lock();
     try {
-      getFileNameByPath(node, path);
+      getStorageGroupByPath(node, path);
       return true;
     } finally {
       lock.readLock().unlock();

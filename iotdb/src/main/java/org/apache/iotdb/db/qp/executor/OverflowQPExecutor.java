@@ -33,7 +33,7 @@ import org.apache.iotdb.db.auth.entity.Role;
 import org.apache.iotdb.db.auth.entity.User;
 import org.apache.iotdb.db.engine.filenode.FileNodeManager;
 import org.apache.iotdb.db.exception.ArgsErrorException;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.ProcessorException;
 import org.apache.iotdb.db.metadata.MManager;
@@ -182,7 +182,7 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
   @Override
   public QueryDataSet aggregate(List<Path> paths, List<String> aggres, IExpression expression,
       QueryContext context)
-      throws ProcessorException, FileNodeManagerException, QueryFilterOptimizationException,
+      throws ProcessorException, StorageGroupManagerException, QueryFilterOptimizationException,
       PathErrorException, IOException {
     return queryRouter.aggregate(paths, aggres, expression, context);
   }
@@ -190,14 +190,14 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
   @Override
   public QueryDataSet fill(List<Path> fillPaths, long queryTime, Map<TSDataType, IFill> fillTypes,
       QueryContext context)
-      throws ProcessorException, IOException, PathErrorException, FileNodeManagerException {
+      throws ProcessorException, IOException, PathErrorException, StorageGroupManagerException {
     return queryRouter.fill(fillPaths, queryTime, fillTypes, context);
   }
 
   @Override
   public QueryDataSet groupBy(List<Path> paths, List<String> aggres, IExpression expression,
       long unit, long origin, List<Pair<Long, Long>> intervals, QueryContext context)
-      throws ProcessorException, FileNodeManagerException, QueryFilterOptimizationException,
+      throws ProcessorException, StorageGroupManagerException, QueryFilterOptimizationException,
       PathErrorException, IOException {
     return queryRouter.groupBy(paths, aggres, expression, unit, origin, intervals, context);
   }
@@ -212,14 +212,14 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
       if (!mManager.pathExist(fullPath)) {
         throw new ProcessorException(String.format("Timeseries %s does not exist.", fullPath));
       }
-      mManager.getFileNameByPath(fullPath);
+      mManager.getStorageGroupByPath(fullPath);
       TSDataType dataType = mManager.getSeriesType(fullPath);
       value = checkValue(dataType, value);
       fileNodeManager.update(deviceId, measurementId, startTime, endTime, dataType, value);
       return true;
     } catch (PathErrorException e) {
       throw new ProcessorException(e.getMessage());
-    } catch (FileNodeManagerException e) {
+    } catch (StorageGroupManagerException e) {
       e.printStackTrace();
       throw new ProcessorException(e.getMessage());
     }
@@ -234,17 +234,16 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
         throw new ProcessorException(
             String.format("Timeseries %s does not exist.", path.getFullPath()));
       }
-      mManager.getFileNameByPath(path.getFullPath());
+      mManager.getStorageGroupByPath(path.getFullPath());
       fileNodeManager.delete(deviceId, measurementId, timestamp);
       return true;
-    } catch (PathErrorException | FileNodeManagerException e) {
+    } catch (PathErrorException | StorageGroupManagerException e) {
       throw new ProcessorException(e);
     }
   }
 
   @Override
-  // return 0: failed, 1: Overflow, 2:Bufferwrite
-  public int insert(Path path, long timestamp, String value) throws ProcessorException {
+  public void insert(Path path, long timestamp, String value) throws ProcessorException {
     String deviceId = path.getDevice();
     String measurementId = path.getMeasurement();
 
@@ -253,12 +252,11 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
       TSRecord tsRecord = new TSRecord(timestamp, deviceId);
       DataPoint dataPoint = DataPoint.getDataPoint(type, measurementId, value);
       tsRecord.addTuple(dataPoint);
-      return fileNodeManager.insert(tsRecord, false);
+      fileNodeManager.insert(tsRecord, false);
 
     } catch (PathErrorException e) {
       throw new ProcessorException("Error in insert: " + e.getMessage());
-    } catch (FileNodeManagerException e) {
-      e.printStackTrace();
+    } catch (StorageGroupManagerException e) {
       throw new ProcessorException(e);
     }
   }
@@ -293,7 +291,7 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
       }
       return fileNodeManager.insert(tsRecord, false);
 
-    } catch (PathErrorException | FileNodeManagerException e) {
+    } catch (PathErrorException | StorageGroupManagerException e) {
       throw new ProcessorException(e.getMessage());
     }
   }
@@ -508,7 +506,7 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
             throw new ProcessorException("Storage group should be created first");
           }
           // optimize the speed of adding timeseries
-          String fileNodePath = mManager.getFileNameByPath(path.getFullPath());
+          String fileNodePath = mManager.getStorageGroupByPath(path.getFullPath());
           // the two map is stored in the storage group node
           Map<String, MeasurementSchema> schemaMap = mManager
               .getSchemaMapForOneFileNode(fileNodePath);
@@ -542,7 +540,7 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
                 //TODO path, resultDataType, encoding, compressor, encodingArgs);
               }
               // fileNodeManager.closeOneFileNode(namespacePath);
-            } catch (FileNodeManagerException e) {
+            } catch (StorageGroupManagerException e) {
               throw new ProcessorException(e);
             }
           }
@@ -560,7 +558,7 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
               }
               List<String> newSubPaths = new ArrayList<>();
               for (String eachSubPath : subPaths) {
-                String filenodeName = mManager.getFileNameByPath(eachSubPath);
+                String filenodeName = mManager.getStorageGroupByPath(eachSubPath);
 
                 if (MonitorConstants.STAT_STORAGE_GROUP_PREFIX.equals(filenodeName)) {
                   continue;
@@ -586,7 +584,7 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
             for (String p : fullPath) {
               String nameSpacePath = null;
               try {
-                nameSpacePath = mManager.getFileNameByPath(p);
+                nameSpacePath = mManager.getStorageGroupByPath(p);
               } catch (PathErrorException e) {
                 throw new ProcessorException(e);
               }
@@ -628,7 +626,7 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
         default:
           throw new ProcessorException("unknown namespace type:" + namespaceType);
       }
-    } catch (PathErrorException | IOException | FileNodeManagerException e) {
+    } catch (PathErrorException | IOException | StorageGroupManagerException e) {
       throw new ProcessorException(e.getMessage());
     }
     return true;

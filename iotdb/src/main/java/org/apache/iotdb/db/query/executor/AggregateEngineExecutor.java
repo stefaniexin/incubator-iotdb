@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.engine.querycontext.QueryDataSource;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.ProcessorException;
 import org.apache.iotdb.db.metadata.MManager;
@@ -80,7 +80,7 @@ public class AggregateEngineExecutor {
    * @param context query context
    */
   public QueryDataSet executeWithOutTimeGenerator(QueryContext context)
-      throws FileNodeManagerException, IOException, PathErrorException, ProcessorException {
+      throws StorageGroupManagerException, IOException, PathErrorException, ProcessorException {
     Filter timeFilter = null;
     if (expression != null) {
       timeFilter = ((GlobalTimeExpression) expression).getFilter();
@@ -255,7 +255,7 @@ public class AggregateEngineExecutor {
    * @param context query context.
    */
   public QueryDataSet executeWithTimeGenerator(QueryContext context)
-      throws FileNodeManagerException, PathErrorException, IOException, ProcessorException {
+      throws StorageGroupManagerException, PathErrorException, IOException, ProcessorException {
     QueryResourceManager
         .getInstance().beginQueryOfGivenQueryPaths(context.getJobId(), selectedSeries);
     QueryResourceManager.getInstance().beginQueryOfGivenExpression(context.getJobId(), expression);

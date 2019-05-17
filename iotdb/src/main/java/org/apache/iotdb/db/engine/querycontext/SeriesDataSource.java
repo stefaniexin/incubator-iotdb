@@ -27,46 +27,46 @@ public class SeriesDataSource {
   private Path seriesPath;
 
   // sealed tsfile
-  private List<TsFileResource> sealedTsFiles;
+  private List<TsFileResource> sealedFiles;
 
   // unsealed tsfile
-  private UnsealedTsFile unsealedTsFile;
+  private UnsealedTsFile unsealedFile;
 
   // seq mem-table
   private ReadOnlyMemChunk readableChunk;
 
-  public SeriesDataSource(Path seriesPath, List<TsFileResource> sealedTsFiles,
-      UnsealedTsFile unsealedTsFile,
+  public SeriesDataSource(Path seriesPath, List<TsFileResource> sealedFiles,
+      UnsealedTsFile unsealedFile,
       ReadOnlyMemChunk readableChunk) {
     this.seriesPath = seriesPath;
-    this.sealedTsFiles = sealedTsFiles;
-    this.unsealedTsFile = unsealedTsFile;
+    this.sealedFiles = sealedFiles;
+    this.unsealedFile = unsealedFile;
 
     this.readableChunk = readableChunk;
   }
 
   public boolean hasSealedTsFiles() {
-    return sealedTsFiles != null && !sealedTsFiles.isEmpty();
+    return sealedFiles != null && !sealedFiles.isEmpty();
   }
 
-  public List<TsFileResource> getSealedTsFiles() {
-    return sealedTsFiles;
+  public List<TsFileResource> getSealedFiles() {
+    return sealedFiles;
   }
 
-  public void setSealedTsFiles(List<TsFileResource> sealedTsFiles) {
-    this.sealedTsFiles = sealedTsFiles;
+  public void setSealedFiles(List<TsFileResource> sealedFiles) {
+    this.sealedFiles = sealedFiles;
   }
 
-  public boolean hasUnsealedTsFile() {
-    return unsealedTsFile != null;
+  public boolean hasUnsealedFile() {
+    return unsealedFile != null;
   }
 
-  public UnsealedTsFile getUnsealedTsFile() {
-    return unsealedTsFile;
+  public UnsealedTsFile getUnsealedFile() {
+    return unsealedFile;
   }
 
-  public void setUnsealedTsFile(UnsealedTsFile unsealedTsFile) {
-    this.unsealedTsFile = unsealedTsFile;
+  public void setUnsealedFile(UnsealedTsFile unsealedFile) {
+    this.unsealedFile = unsealedFile;
   }
 
   public boolean hasRawSeriesChunk() {

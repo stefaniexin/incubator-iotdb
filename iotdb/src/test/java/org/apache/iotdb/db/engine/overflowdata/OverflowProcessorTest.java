@@ -30,12 +30,11 @@ import org.apache.iotdb.db.engine.sgmanager.OperationResult;
 import org.apache.iotdb.db.engine.tsfiledata.TsFileProcessorTest;
 import org.apache.iotdb.db.engine.version.SysTimeVersionController;
 import org.apache.iotdb.db.exception.BufferWriteProcessorException;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.FileNodeProcessorException;
 import org.apache.iotdb.db.exception.MetadataArgsErrorException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.qp.physical.crud.InsertPlan;
-import org.apache.iotdb.db.query.control.QueryResourceManager;
 import org.apache.iotdb.db.utils.ImmediateFuture;
 import org.apache.iotdb.tsfile.read.common.Path;
 import org.apache.iotdb.tsfile.read.common.RowRecord;
@@ -64,7 +63,7 @@ public class OverflowProcessorTest extends TsFileProcessorTest {
 
   @Test
   public void insert()
-      throws BufferWriteProcessorException, IOException, ExecutionException, InterruptedException, FileNodeProcessorException, FileNodeManagerException, PathErrorException, MetadataArgsErrorException {
+      throws BufferWriteProcessorException, IOException, ExecutionException, InterruptedException, FileNodeProcessorException, StorageGroupManagerException, PathErrorException, MetadataArgsErrorException {
     String[] s1 = new String[]{"s1"};
     String[] s2 = new String[]{"s2"};
     String[] value = new String[]{"5.0"};

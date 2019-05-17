@@ -43,7 +43,7 @@ public class TsFileResourceTest {
     Map<String, Long> endTimes = new HashMap<>();
 
     tsFileResource = new TsFileResource(Collections.emptyMap(), Collections.emptyMap(),
-        OverflowChangeType.MERGING_CHANGE, new File(relativePath));
+        new File(relativePath));
     for (int i = 0; i < 10; i++) {
       startTimes.put("d" + i, (long) i);
     }

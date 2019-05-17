@@ -20,7 +20,6 @@
 package org.apache.iotdb.db.engine.tsfiledata;
 
 import static org.apache.iotdb.db.utils.EnvironmentUtils.TEST_QUERY_CONTEXT;
-import static org.apache.iotdb.db.utils.EnvironmentUtils.TEST_QUERY_JOB_ID;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -34,7 +33,7 @@ import org.apache.iotdb.db.engine.bufferwrite.ActionException;
 import org.apache.iotdb.db.engine.sgmanager.OperationResult;
 import org.apache.iotdb.db.engine.version.SysTimeVersionController;
 import org.apache.iotdb.db.exception.BufferWriteProcessorException;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.FileNodeProcessorException;
 import org.apache.iotdb.db.exception.MetadataArgsErrorException;
 import org.apache.iotdb.db.exception.PathErrorException;
@@ -110,7 +109,7 @@ public class TsFileProcessorTest {
 
   @Test
   public void insert()
-      throws BufferWriteProcessorException, IOException, ExecutionException, InterruptedException, FileNodeProcessorException, FileNodeManagerException, PathErrorException, MetadataArgsErrorException {
+      throws BufferWriteProcessorException, IOException, ExecutionException, InterruptedException, FileNodeProcessorException, StorageGroupManagerException, PathErrorException, MetadataArgsErrorException {
     String[] s1 = new String[]{"s1"};
     String[] s2 = new String[]{"s2"};
     String[] value = new String[]{"5.0"};
@@ -150,7 +149,7 @@ public class TsFileProcessorTest {
 
 
   @Test
-  public void bruteForceTest() throws InterruptedException, FileNodeManagerException, IOException {
+  public void bruteForceTest() throws InterruptedException, StorageGroupManagerException, IOException {
 
     final boolean[] exception = {false, false, false};
     final boolean[] goon = {true};
@@ -216,7 +215,7 @@ public class TsFileProcessorTest {
             QueryResourceManager.getInstance().endQueryForGivenJob(context.getJobId());
             processor.readUnlock();
           }
-        } catch (IOException | FileNodeManagerException e) {
+        } catch (IOException | StorageGroupManagerException e) {
           // we will break out.
           LOGGER.error(e.getMessage());
           exception[2] = true;

@@ -26,7 +26,7 @@ import org.apache.iotdb.db.conf.IoTDBConstant;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.engine.filenode.FileNodeManager;
 import org.apache.iotdb.db.engine.memcontrol.BasicMemController;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.RecoverException;
 import org.apache.iotdb.db.exception.StartupException;
@@ -123,7 +123,7 @@ public class IoTDB implements IoTDBMBean {
   }
 
   @Override
-  public void stop() throws FileNodeManagerException {
+  public void stop() throws StorageGroupManagerException {
     deactivate();
   }
 
@@ -147,7 +147,7 @@ public class IoTDB implements IoTDBMBean {
     WriteLogNodeManager writeLogManager = MultiFileLogNodeManager.getInstance();
     List<String> filenodeNames = null;
     try {
-      filenodeNames = MManager.getInstance().getAllFileNames();
+      filenodeNames = MManager.getInstance().getAllStorageGroups();
     } catch (PathErrorException e) {
       throw new RecoverException(e);
     }
@@ -155,7 +155,7 @@ public class IoTDB implements IoTDBMBean {
       if (writeLogManager.hasWAL(filenodeName)) {
         try {
           FileNodeManager.getInstance().recoverFileNode(filenodeName);
-        } catch (FileNodeManagerException e) {
+        } catch (StorageGroupManagerException e) {
           throw new RecoverException(e);
         }
       }

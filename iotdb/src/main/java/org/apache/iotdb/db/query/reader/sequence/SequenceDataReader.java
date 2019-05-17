@@ -67,27 +67,27 @@ public class SequenceDataReader implements IBatchReader, IAggregateReader {
       }
 
       // add reader for unSealed TsFile
-      if (sources.hasUnsealedTsFile()) {
-        seriesReaders.add(new UnSealedTsFileReader(sources.getUnsealedTsFile(), filter, isReverse));
+      if (sources.hasUnsealedFile()) {
+        seriesReaders.add(new UnSealedTsFileReader(sources.getUnsealedFile(), filter, isReverse));
       }
 
       // add reader for sealed TsFiles
       if (sources.hasSealedTsFiles()) {
         seriesReaders.add(
-            new SealedTsFilesReader(sources.getSeriesPath(), sources.getSealedTsFiles(), filter,
+            new SealedTsFilesReader(sources.getSeriesPath(), sources.getSealedFiles(), filter,
                 context, isReverse));
       }
     } else {
       // add reader for sealed TsFiles
       if (sources.hasSealedTsFiles()) {
         seriesReaders.add(
-            new SealedTsFilesReader(sources.getSeriesPath(), sources.getSealedTsFiles(), filter,
+            new SealedTsFilesReader(sources.getSeriesPath(), sources.getSealedFiles(), filter,
                 context, isReverse));
       }
 
       // add reader for unSealed TsFile
-      if (sources.hasUnsealedTsFile()) {
-        seriesReaders.add(new UnSealedTsFileReader(sources.getUnsealedTsFile(), filter, isReverse));
+      if (sources.hasUnsealedFile()) {
+        seriesReaders.add(new UnSealedTsFileReader(sources.getUnsealedFile(), filter, isReverse));
       }
 
       // add data in memTable

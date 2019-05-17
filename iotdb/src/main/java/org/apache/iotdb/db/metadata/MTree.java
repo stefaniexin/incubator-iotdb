@@ -585,26 +585,26 @@ public class MTree implements Serializable {
   }
 
   /**
-   * Get all the storage group seriesPaths for one seriesPath.
+   * Get all the storage group names for one seriesPath.
    *
    * @return List storage group seriesPath list
    * @apiNote :for cluster
    */
-  public List<String> getAllFileNamesByPath(String pathReg) throws PathErrorException {
-    ArrayList<String> fileNames = new ArrayList<>();
+  public List<String> getAllStorageGroupsByPath(String pathReg) throws PathErrorException {
+    ArrayList<String> storageGroups = new ArrayList<>();
     String[] nodes = pathReg.split(DOUB_SEPARATOR);
     if (nodes.length == 0 || !nodes[0].equals(getRoot().getName())) {
       throw new PathErrorException(String.format(SERIES_NOT_CORRECT, pathReg));
     }
-    findFileName(getRoot(), nodes, 1, "", fileNames);
-    return fileNames;
+    findStorageGroup(getRoot(), nodes, 1, "", storageGroups);
+    return storageGroups;
   }
 
   /**
-   * Recursively find all fileName according to a specific path
+   * Recursively find all storage groups according to a specific path
    * @apiNote :for cluster
    */
-  private void findFileName(MNode node, String[] nodes, int idx, String parent,
+  private void findStorageGroup(MNode node, String[] nodes, int idx, String parent,
       ArrayList<String> paths) {
     if (node.isStorageLevel()) {
       paths.add(node.getDataFileName());
@@ -619,11 +619,11 @@ public class MTree implements Serializable {
 
     if (!("*").equals(nodeReg)) {
       if (node.hasChild(nodeReg)) {
-        findFileName(node.getChild(nodeReg), nodes, idx + 1, parent + node.getName() + ".", paths);
+        findStorageGroup(node.getChild(nodeReg), nodes, idx + 1, parent + node.getName() + ".", paths);
       }
     } else {
       for (MNode child : node.getChildren().values()) {
-        findFileName(child, nodes, idx + 1, parent + node.getName() + ".", paths);
+        findStorageGroup(child, nodes, idx + 1, parent + node.getName() + ".", paths);
       }
     }
     return;

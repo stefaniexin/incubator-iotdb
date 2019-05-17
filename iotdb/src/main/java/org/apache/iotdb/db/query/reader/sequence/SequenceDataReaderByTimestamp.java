@@ -45,13 +45,13 @@ public class SequenceDataReaderByTimestamp implements EngineReaderByTimeStamp {
     // add reader for sealed TsFiles
     if (sources.hasSealedTsFiles()) {
       seriesReaders.add(
-          new SealedTsFilesReaderByTimestamp(sources.getSeriesPath(), sources.getSealedTsFiles(),
+          new SealedTsFilesReaderByTimestamp(sources.getSeriesPath(), sources.getSealedFiles(),
               context));
     }
 
     // add reader for unSealed TsFile
-    if (sources.hasUnsealedTsFile()) {
-      seriesReaders.add(new UnSealedTsFilesReaderByTimestamp(sources.getUnsealedTsFile()));
+    if (sources.hasUnsealedFile()) {
+      seriesReaders.add(new UnSealedTsFilesReaderByTimestamp(sources.getUnsealedFile()));
     }
 
     // add data in memTable

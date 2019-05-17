@@ -39,7 +39,7 @@ public class OverflowProcessor extends TsFileProcessor {
    */
   public OverflowProcessor(String processorName, VersionController versionController,
       FileSchema fileSchemaRef)
-      throws TsFileProcessorException, IOException {
+      throws TsFileProcessorException {
     super(processorName, versionController,
         fileSchemaRef);
   }

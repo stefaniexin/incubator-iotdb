@@ -30,7 +30,7 @@ import org.apache.iotdb.db.engine.cache.RowGroupBlockMetaDataCache;
 import org.apache.iotdb.db.engine.cache.TsFileMetaDataCache;
 import org.apache.iotdb.db.engine.filenode.FileNodeManager;
 import org.apache.iotdb.db.engine.memcontrol.BasicMemController;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.StartupException;
 import org.apache.iotdb.db.metadata.MManager;
 import org.apache.iotdb.db.monitor.StatMonitor;
@@ -63,7 +63,7 @@ public class EnvironmentUtils {
   public static long TEST_QUERY_JOB_ID = QueryResourceManager.getInstance().assignJobId();
   public static QueryContext TEST_QUERY_CONTEXT = new QueryContext(TEST_QUERY_JOB_ID);
 
-  public static void cleanEnv() throws IOException, FileNodeManagerException {
+  public static void cleanEnv() throws IOException, StorageGroupManagerException {
 
     QueryResourceManager.getInstance().endQueryForGivenJob(TEST_QUERY_JOB_ID);
 
@@ -77,7 +77,7 @@ public class EnvironmentUtils {
         LOGGER.error("Can't close the filenode manager in EnvironmentUtils");
         Assert.fail();
       }
-    } catch (FileNodeManagerException e) {
+    } catch (StorageGroupManagerException e) {
       throw new IOException(e);
     }
     StatMonitor.getInstance().close();

@@ -32,7 +32,7 @@ import org.apache.iotdb.db.engine.querycontext.SeriesDataSource;
 import org.apache.iotdb.db.engine.querycontext.OverflowSeriesDataSource;
 import org.apache.iotdb.db.engine.querycontext.QueryDataSource;
 import org.apache.iotdb.db.engine.tsfiledata.TsFileProcessor;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.query.context.QueryContext;
 import org.apache.iotdb.tsfile.read.common.Path;
 import org.apache.iotdb.tsfile.read.expression.ExpressionType;
@@ -119,7 +119,7 @@ public class QueryResourceManager {
    * calculation.
    */
   public void beginQueryOfGivenQueryPaths(long jobId, List<Path> queryPaths)
-      throws FileNodeManagerException {
+      throws StorageGroupManagerException {
     Set<String> deviceIdSet = new HashSet<>();
     queryPaths.forEach(path -> deviceIdSet.add(path.getDevice()));
 
@@ -134,7 +134,7 @@ public class QueryResourceManager {
    * calculation.
    */
   public void beginQueryOfGivenExpression(long jobId, IExpression expression)
-      throws FileNodeManagerException {
+      throws StorageGroupManagerException {
     Set<String> deviceIdSet = new HashSet<>();
     getUniquePaths(expression, deviceIdSet);
     for (String deviceId : deviceIdSet) {
@@ -145,7 +145,7 @@ public class QueryResourceManager {
 
   public QueryDataSource getQueryDataSource(Path selectedPath,
       QueryContext context)
-      throws FileNodeManagerException {
+      throws StorageGroupManagerException {
 
     SingleSeriesExpression singleSeriesExpression = new SingleSeriesExpression(selectedPath, null);
     QueryDataSource queryDataSource = FileNodeManager.getInstance()
@@ -161,7 +161,7 @@ public class QueryResourceManager {
    * Whenever the jdbc request is closed normally or abnormally, this method must be invoked. All
    * query tokens created by this jdbc request must be cleared.
    */
-  public void endQueryForGivenJob(long jobId) throws FileNodeManagerException {
+  public void endQueryForGivenJob(long jobId) throws StorageGroupManagerException {
     if (queryTokensMap.get(jobId) == null) {
       // no resource need to be released.
       return;
@@ -207,7 +207,7 @@ public class QueryResourceManager {
    */
   public QueryDataSource getQueryDataSourceByTsFileProcessor(Path selectedPath,
       QueryContext context, TsFileProcessor processor)
-      throws IOException, FileNodeManagerException {
+      throws IOException, StorageGroupManagerException {
     OverflowSeriesDataSource overflowSeriesDataSource = new OverflowSeriesDataSource(selectedPath);
     overflowSeriesDataSource.setOverflowInsertFileList(Collections.EMPTY_LIST);
 

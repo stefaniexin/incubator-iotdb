@@ -24,7 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.ProcessorException;
 import org.apache.iotdb.db.metadata.MManager;
@@ -58,7 +58,7 @@ public abstract class QueryProcessExecutor {
    * @return QueryDataSet
    */
   public QueryDataSet processQuery(QueryPlan queryPlan, QueryContext context)
-      throws IOException, FileNodeManagerException, PathErrorException,
+      throws IOException, StorageGroupManagerException, PathErrorException,
       QueryFilterOptimizationException, ProcessorException {
 
     QueryExpression queryExpression = QueryExpression.create().setSelectSeries(queryPlan.getPaths())
@@ -104,16 +104,16 @@ public abstract class QueryProcessExecutor {
 
   public abstract QueryDataSet aggregate(List<Path> paths, List<String> aggres,
       IExpression expression, QueryContext context) throws ProcessorException, IOException,
-      PathErrorException, FileNodeManagerException, QueryFilterOptimizationException;
+      PathErrorException, StorageGroupManagerException, QueryFilterOptimizationException;
 
   public abstract QueryDataSet groupBy(List<Path> paths, List<String> aggres,
       IExpression expression, long unit, long origin, List<Pair<Long, Long>> intervals,
       QueryContext context) throws ProcessorException, IOException, PathErrorException,
-      FileNodeManagerException, QueryFilterOptimizationException;
+      StorageGroupManagerException, QueryFilterOptimizationException;
 
   public abstract QueryDataSet fill(List<Path> fillPaths, long queryTime, Map<TSDataType,
       IFill> fillTypes, QueryContext context)
-      throws ProcessorException, IOException, PathErrorException, FileNodeManagerException;
+      throws ProcessorException, IOException, PathErrorException, StorageGroupManagerException;
 
   /**
    * executeWithGlobalTimeFilter update command and return whether the operator is successful.
@@ -177,9 +177,8 @@ public abstract class QueryProcessExecutor {
    * @param path seriesPath to be inserted
    * @param insertTime - it's time point but not a range
    * @param value value to be inserted
-   * @return - Operate Type.
    */
-  public abstract int insert(Path path, long insertTime, String value) throws ProcessorException;
+  public abstract void insert(Path path, long insertTime, String value) throws ProcessorException;
 
   /**
    * executeWithGlobalTimeFilter insert command and return whether the operator is successful.

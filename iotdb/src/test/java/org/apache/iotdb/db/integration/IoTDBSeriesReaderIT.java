@@ -30,7 +30,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.query.context.QueryContext;
 import org.apache.iotdb.db.query.control.QueryResourceManager;
 import org.apache.iotdb.db.query.executor.EngineQueryRouter;
@@ -240,7 +240,7 @@ public class IoTDBSeriesReaderIT {
   }
 
   @Test
-  public void selectAllTest() throws IOException, FileNodeManagerException {
+  public void selectAllTest() throws IOException, StorageGroupManagerException {
     String selectSql = "select * from root";
     System.out.println("Test >>> " + selectSql);
 
@@ -271,7 +271,7 @@ public class IoTDBSeriesReaderIT {
   }
 
   @Test
-  public void selectOneSeriesWithValueFilterTest() throws IOException, FileNodeManagerException {
+  public void selectOneSeriesWithValueFilterTest() throws IOException, StorageGroupManagerException {
 
     String selectSql = "select s0 from root.vehicle.d0 where s0 >= 20";
     System.out.println("Test >>> " + selectSql);
@@ -301,7 +301,7 @@ public class IoTDBSeriesReaderIT {
   }
 
   @Test
-  public void seriesTimeDigestReadTest() throws IOException, FileNodeManagerException {
+  public void seriesTimeDigestReadTest() throws IOException, StorageGroupManagerException {
     String selectSql = "select s0 from root.vehicle.d0 where time >= 22987";
     System.out.println("Test >>> " + selectSql);
 
@@ -329,7 +329,7 @@ public class IoTDBSeriesReaderIT {
   }
 
   @Test
-  public void crossSeriesReadUpdateTest() throws IOException, FileNodeManagerException {
+  public void crossSeriesReadUpdateTest() throws IOException, StorageGroupManagerException {
     System.out.println("Test >>> select s1 from root.vehicle.d0 where s0 < 111");
     EngineQueryRouter engineExecutor = new EngineQueryRouter();
     QueryExpression queryExpression = QueryExpression.create();

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.iotdb.db.engine.filenode;
+package org.apache.iotdb.db.engine.sgmanager;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,9 +37,9 @@ import org.apache.iotdb.db.conf.IoTDBConstant;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.conf.directories.Directories;
 import org.apache.iotdb.db.engine.Processor;
-import org.apache.iotdb.db.engine.bufferwrite.BufferWriteProcessor;
+import org.apache.iotdb.db.engine.filenode.FileNodeProcessor;
+import org.apache.iotdb.db.engine.filenode.TsFileResource;
 import org.apache.iotdb.db.engine.memcontrol.BasicMemController;
-import org.apache.iotdb.db.engine.overflow.io.OverflowProcessor;
 import org.apache.iotdb.db.engine.pool.FlushManager;
 import org.apache.iotdb.db.engine.querycontext.QueryDataSource;
 import org.apache.iotdb.db.exception.BufferWriteProcessorException;
@@ -47,21 +47,18 @@ import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.FileNodeProcessorException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.ProcessorException;
+import org.apache.iotdb.db.exception.TsFileProcessorException;
 import org.apache.iotdb.db.metadata.MManager;
 import org.apache.iotdb.db.monitor.IStatistic;
 import org.apache.iotdb.db.monitor.MonitorConstants;
 import org.apache.iotdb.db.monitor.MonitorConstants.StorageGroupManagerStatConstants;
 import org.apache.iotdb.db.monitor.StatMonitor;
-import org.apache.iotdb.db.qp.physical.crud.DeletePlan;
 import org.apache.iotdb.db.qp.physical.crud.InsertPlan;
-import org.apache.iotdb.db.qp.physical.crud.UpdatePlan;
 import org.apache.iotdb.db.query.context.QueryContext;
 import org.apache.iotdb.db.query.control.FileReaderManager;
 import org.apache.iotdb.db.service.IService;
 import org.apache.iotdb.db.service.ServiceType;
-import org.apache.iotdb.db.utils.MemUtils;
 import org.apache.iotdb.db.writelog.manager.MultiFileLogNodeManager;
-import org.apache.iotdb.db.writelog.node.WriteLogNode;
 import org.apache.iotdb.tsfile.common.conf.TSFileConfig;
 import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
@@ -69,52 +66,46 @@ import org.apache.iotdb.tsfile.file.metadata.enums.TSEncoding;
 import org.apache.iotdb.tsfile.read.common.Path;
 import org.apache.iotdb.tsfile.read.expression.impl.SingleSeriesExpression;
 import org.apache.iotdb.tsfile.write.record.TSRecord;
-import org.apache.iotdb.tsfile.write.record.datapoint.DataPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class FileNodeManager implements IStatistic, IService {
+/**
+ * StorageGroupManager provides top-level interfaces to access IoTDB storage engine. It decides
+ * which StorageGroup(s) to access in order to complete a query.
+ */
+public class StorageGroupManager implements IStatistic, IService {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(FileNodeManager.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(StorageGroupManager.class);
   private static final IoTDBConfig TsFileDBConf = IoTDBDescriptor.getInstance().getConfig();
   private static final Directories directories = Directories.getInstance();
-  /**
-   * a folder that persist FileNodeProcessorStore classes. Each stroage group will have a subfolder.
-   * by default, it is system/info
-   */
-  private final String baseDir;
 
   /**
-   * This map is used to manage all filenode processor,<br> the key is filenode name which is
+   * This map is used to manage all StorageGroupProcessors,<br> the key is filenode name which is
    * storage group seriesPath.
+   * e.g. if the user executes a query "SET STORAGE GROUP TO root.beijing", then "root.beijing" will
+   * be a key.
    */
-  private ConcurrentHashMap<String, FileNodeProcessor> processorMap;
+  private ConcurrentHashMap<String, StorageGroupProcessor> processorMap;
+
   /**
-   * This set is used to store overflowed filenode name.<br> The overflowed filenode will be merge.
+   * fileNodeManagerStatus indicates whether the Manager is merging or being closed.
    */
   private volatile FileNodeManagerStatus fileNodeManagerStatus = FileNodeManagerStatus.NONE;
-  // There is no need to add concurrently
+
   private HashMap<String, AtomicLong> statParamsHashMap;
 
-  private FileNodeManager(String baseDir) {
+  private StorageGroupManager() {
     processorMap = new ConcurrentHashMap<>();
+    initStat();
+  }
+
+  private void initStat() {
     statParamsHashMap = new HashMap<>();
-    //label: A
     for (StorageGroupManagerStatConstants fileNodeManagerStatConstant :
         StorageGroupManagerStatConstants.values()) {
       statParamsHashMap.put(fileNodeManagerStatConstant.name(), new AtomicLong(0));
     }
 
-    String normalizedBaseDir = baseDir;
-    if (normalizedBaseDir.charAt(normalizedBaseDir.length() - 1) != File.separatorChar) {
-      normalizedBaseDir += Character.toString(File.separatorChar);
-    }
-    this.baseDir = normalizedBaseDir;
-    File dir = new File(normalizedBaseDir);
-    if (dir.mkdirs()) {
-      LOGGER.info("{} dir home doesn't exist, create it", dir.getPath());
-    }
-    //TODO merge this with label A
     if (TsFileDBConf.isEnableStatMonitor()) {
       StatMonitor statMonitor = StatMonitor.getInstance();
       registerStatMetadata();
@@ -122,7 +113,7 @@ public class FileNodeManager implements IStatistic, IService {
     }
   }
 
-  public static FileNodeManager getInstance() {
+  public static StorageGroupManager getInstance() {
     return FileNodeManagerHolder.INSTANCE;
   }
 
@@ -193,27 +184,28 @@ public class FileNodeManager implements IStatistic, IService {
   /**
    * @param filenodeName storage name, e.g., root.a.b
    */
-  private FileNodeProcessor constructNewProcessor(String filenodeName)
+  private StorageGroupProcessor constructNewProcessor(String filenodeName)
       throws StorageGroupManagerException {
     try {
-      return new FileNodeProcessor(baseDir, filenodeName);
-    } catch (FileNodeProcessorException e) {
-      LOGGER.error("Can't construct the FileNodeProcessor, the filenode is {}", filenodeName, e);
-      throw new StorageGroupManagerException(e);
+      return new StorageGroupProcessor(filenodeName);
+    } catch (TsFileProcessorException e) {
+      throw new StorageGroupManagerException(String.format("Can't construct the "
+          + "StorageGroupProcessor, the StorageGroup is %s", filenodeName), e);
     }
   }
 
-  private FileNodeProcessor getProcessor(String path, boolean isWriteLock)
+  @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
+  private StorageGroupProcessor getProcessor(String path, boolean isWriteLock)
       throws StorageGroupManagerException {
     String filenodeName;
     try {
       // return the stroage name
       filenodeName = MManager.getInstance().getStorageGroupByPath(path);
     } catch (PathErrorException e) {
-      LOGGER.error("MManager get filenode name error, seriesPath is {}", path);
-      throw new StorageGroupManagerException(e);
+      throw new StorageGroupManagerException(
+          String.format("MManager get StorageGroup name error, seriesPath is %s", path), e);
     }
-    FileNodeProcessor processor;
+    StorageGroupProcessor processor;
     processor = processorMap.get(filenodeName);
     if (processor != null) {
       processor.lock(isWriteLock);
@@ -226,8 +218,10 @@ public class FileNodeManager implements IStatistic, IService {
           processor.lock(isWriteLock);
         } else {
           // calculate the value with the key monitor
-          LOGGER.debug("construct a processor instance, the filenode is {}, Thread is {}",
-              filenodeName, Thread.currentThread().getId());
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("construct a processor instance, the filenode is {}, Thread is {}",
+                filenodeName, Thread.currentThread().getId());
+          }
           processor = constructNewProcessor(filenodeName);
           processor.lock(isWriteLock);
           processorMap.put(filenodeName, processor);
@@ -238,217 +232,88 @@ public class FileNodeManager implements IStatistic, IService {
   }
 
   /**
-   * recovery the filenode processor.
+   * recover the StorageGroupProcessors.
    */
-  public void recovery() {
-    List<String> filenodeNames = null;
+  public void recover() throws StorageGroupManagerException {
+    List<String> filenodeNames;
     try {
       filenodeNames = MManager.getInstance().getAllStorageGroups();
     } catch (PathErrorException e) {
-      LOGGER.error("Restoring all FileNodes failed.", e);
-      return;
+      throw new StorageGroupManagerException("Restoring all FileNodes failed.", e);
     }
     for (String filenodeName : filenodeNames) {
-      FileNodeProcessor fileNodeProcessor = null;
+      StorageGroupProcessor fileNodeProcessor = null;
       try {
         fileNodeProcessor = getProcessor(filenodeName, true);
-        if (fileNodeProcessor.shouldRecovery()) {
-          LOGGER.info("Recovery the filenode processor, the filenode is {}, the status is {}",
-              filenodeName, fileNodeProcessor.getFileNodeProcessorStatus());
-          fileNodeProcessor.fileNodeRecovery();
-        }
-      } catch (StorageGroupManagerException | FileNodeProcessorException e) {
-        LOGGER.error("Restoring fileNode {} failed.", filenodeName, e);
+      } catch (StorageGroupManagerException e) {
+        throw new StorageGroupManagerException(String.format("Restoring fileNode %s failed.",
+            filenodeName), e);
       } finally {
         if (fileNodeProcessor != null) {
           fileNodeProcessor.writeUnlock();
         }
       }
-      // add index check sum
     }
   }
 
   /**
    * insert TsRecord into storage group.
    *
-   * @param tsRecord input Data
+   * @param plan an insert plan
    * @param isMonitor if true, the insertion is done by StatMonitor and the statistic Info will not
    * be recorded. if false, the statParamsHashMap will be updated.
    */
-  public void insert(TSRecord tsRecord, boolean isMonitor) throws StorageGroupManagerException {
-    long timestamp = tsRecord.time;
+  public void insert(InsertPlan plan, boolean isMonitor) throws StorageGroupManagerException {
+    long timestamp = plan.getTime();
 
-    String deviceId = tsRecord.deviceId;
-    checkTimestamp(tsRecord);
-    updateStat(isMonitor, tsRecord);
+    String deviceId = plan.getDeviceId();
+    checkTimestamp(timestamp);
+    updateStat(isMonitor, plan);
 
-    FileNodeProcessor fileNodeProcessor = getProcessor(deviceId, true);
+    StorageGroupProcessor processor = getProcessor(deviceId, true);
 
     try {
-      long lastUpdateTime = fileNodeProcessor.getFlushLastUpdateTime(deviceId);
-      if (timestamp < lastUpdateTime) {
-        insertOverflow(fileNodeProcessor, timestamp, tsRecord, isMonitor, deviceId);
-      } else {
-        insertBufferWrite(fileNodeProcessor, timestamp, isMonitor, tsRecord, deviceId);
+      OperationResult result = processor.insert(plan);
+      if (result != OperationResult.WRITE_SUCCESS) {
+        throw new StorageGroupManagerException(String.format("Insertion failed due to %s",
+            result.toString()));
       }
-    } catch (FileNodeProcessorException e) {
-      LOGGER.error(String.format("Encounter an error when closing the buffer write processor %s.",
-          fileNodeProcessor.getProcessorName()), e);
-      throw new StorageGroupManagerException(e);
+    } catch (TsFileProcessorException e) {
+      throw new StorageGroupManagerException(String.format("Fail to write in SG %s",
+          processor.getProcessorName()), e);
     } finally {
-      fileNodeProcessor.writeUnlock();
+      processor.writeUnlock();
     }
     // Modify the insert
     if (!isMonitor) {
-      fileNodeProcessor.getStatParamsHashMap()
+      processor.getStatParamsHashMap()
           .get(MonitorConstants.FileNodeProcessorStatConstants.TOTAL_POINTS_SUCCESS.name())
-          .addAndGet(tsRecord.dataPointList.size());
-      fileNodeProcessor.getStatParamsHashMap()
+          .addAndGet(plan.getValues().length);
+      processor.getStatParamsHashMap()
           .get(MonitorConstants.FileNodeProcessorStatConstants.TOTAL_REQ_SUCCESS.name())
           .incrementAndGet();
       statParamsHashMap.get(StorageGroupManagerStatConstants.TOTAL_REQ_SUCCESS.name())
           .incrementAndGet();
       statParamsHashMap
           .get(StorageGroupManagerStatConstants.TOTAL_POINTS_SUCCESS.name())
-          .addAndGet(tsRecord.dataPointList.size());
+          .addAndGet(plan.getValues().length);
     }
   }
 
-  private void writeLog(TSRecord tsRecord, boolean isMonitor, WriteLogNode logNode)
-      throws StorageGroupManagerException {
-    try {
-      if (IoTDBDescriptor.getInstance().getConfig().isEnableWal()) {
-        String[] measurementList = new String[tsRecord.dataPointList.size()];
-        String[] insertValues = new String[tsRecord.dataPointList.size()];
-        int i=0;
-        for (DataPoint dp : tsRecord.dataPointList) {
-          measurementList[i] = dp.getMeasurementId();
-          insertValues[i] = dp.getValue().toString();
-          i++;
-        }
-        logNode.write(new InsertPlan(2, tsRecord.deviceId, tsRecord.time, measurementList,
-            insertValues));
-      }
-    } catch (IOException e) {
-      if (!isMonitor) {
-        updateStatHashMapWhenFail(tsRecord);
-      }
-      throw new StorageGroupManagerException(e);
+  private void checkTimestamp(long time) throws StorageGroupManagerException {
+    if (time < 0) {
+      throw new StorageGroupManagerException(String.format("The insert time %s is lt 0 ",
+          time));
     }
   }
 
-  private void checkTimestamp(TSRecord tsRecord) throws StorageGroupManagerException {
-    if (tsRecord.time < 0) {
-      LOGGER.error("The insert time lt 0, {}.", tsRecord);
-      throw new StorageGroupManagerException("The insert time lt 0, the tsrecord is " + tsRecord);
-    }
-  }
-
-  private void updateStat(boolean isMonitor, TSRecord tsRecord) {
+  private void updateStat(boolean isMonitor, InsertPlan plan) {
     if (!isMonitor) {
       statParamsHashMap.get(StorageGroupManagerStatConstants.TOTAL_POINTS.name())
-          .addAndGet(tsRecord.dataPointList.size());
+          .addAndGet(plan.getValues().length);
     }
   }
 
-  private void insertOverflow(FileNodeProcessor fileNodeProcessor, long timestamp,
-      TSRecord tsRecord, boolean isMonitor, String deviceId)
-      throws StorageGroupManagerException {
-    // get overflow processor
-    OverflowProcessor overflowProcessor;
-    String filenodeName = fileNodeProcessor.getProcessorName();
-    try {
-      overflowProcessor = fileNodeProcessor.getOverflowProcessor(filenodeName);
-    } catch (IOException e) {
-      LOGGER.error("Get the overflow processor failed, the filenode is {}, insert time is {}",
-          filenodeName, timestamp);
-      if (!isMonitor) {
-        updateStatHashMapWhenFail(tsRecord);
-      }
-      throw new StorageGroupManagerException(e);
-    }
-    // write wal
-    writeLog(tsRecord, isMonitor, overflowProcessor.getLogNode());
-    // write overflow data
-    try {
-      overflowProcessor.insert(tsRecord);
-      fileNodeProcessor.changeTypeToChanged(deviceId, timestamp);
-      fileNodeProcessor.setOverflowed(true);
-    } catch (IOException e) {
-      LOGGER.error("Insert into overflow error, the reason is {}", e);
-      if (!isMonitor) {
-        updateStatHashMapWhenFail(tsRecord);
-      }
-      throw new StorageGroupManagerException(e);
-    }
-  }
-
-  private void insertBufferWrite(FileNodeProcessor fileNodeProcessor, long timestamp,
-      boolean isMonitor, TSRecord tsRecord, String deviceId)
-      throws StorageGroupManagerException, FileNodeProcessorException {
-    // get bufferwrite processor
-    BufferWriteProcessor bufferWriteProcessor;
-    String filenodeName = fileNodeProcessor.getProcessorName();
-    try {
-      bufferWriteProcessor = fileNodeProcessor.getBufferWriteProcessor(filenodeName, timestamp);
-    } catch (FileNodeProcessorException e) {
-      LOGGER.error("Get the bufferwrite processor failed, the filenode is {}, insert time is {}",
-          filenodeName, timestamp);
-      if (!isMonitor) {
-        updateStatHashMapWhenFail(tsRecord);
-      }
-      throw new StorageGroupManagerException(e);
-    }
-    // Add a new interval file to newfilelist
-    if (bufferWriteProcessor.isNewProcessor()) {
-      bufferWriteProcessor.setNewProcessor(false);
-      String bufferwriteBaseDir = bufferWriteProcessor.getBaseDir();
-      String bufferwriteRelativePath = bufferWriteProcessor.getFileRelativePath();
-      try {
-        fileNodeProcessor.addIntervalFileNode(new File(new File(bufferwriteBaseDir), bufferwriteRelativePath));
-      } catch (Exception e) {
-        if (!isMonitor) {
-          updateStatHashMapWhenFail(tsRecord);
-        }
-        throw new StorageGroupManagerException(e);
-      }
-    }
-    // write wal
-    writeLog(tsRecord, isMonitor, bufferWriteProcessor.getLogNode());
-    // Write data
-    long prevStartTime = fileNodeProcessor.getIntervalFileNodeStartTime(deviceId);
-    long prevUpdateTime = fileNodeProcessor.getLastUpdateTime(deviceId);
-
-    fileNodeProcessor.setIntervalFileNodeStartTime(deviceId);
-    fileNodeProcessor.setLastUpdateTime(deviceId, timestamp);
-    try {
-      if (!bufferWriteProcessor.write(tsRecord)) {
-        // undo time update
-        fileNodeProcessor.setIntervalFileNodeStartTime(deviceId, prevStartTime);
-        fileNodeProcessor.setLastUpdateTime(deviceId, prevUpdateTime);
-      }
-    } catch (BufferWriteProcessorException e) {
-      if (!isMonitor) {
-        updateStatHashMapWhenFail(tsRecord);
-      }
-      throw new StorageGroupManagerException(e);
-    }
-
-    if (bufferWriteProcessor
-        .getFileSize() > IoTDBDescriptor.getInstance()
-        .getConfig().getBufferwriteFileSizeThreshold()) {
-      if (LOGGER.isInfoEnabled()) {
-        LOGGER.info(
-            "The filenode processor {} will close the bufferwrite processor, "
-                + "because the size[{}] of tsfile {} reaches the threshold {}",
-            filenodeName, MemUtils.bytesCntToStr(bufferWriteProcessor.getFileSize()),
-            bufferWriteProcessor.getInsertFilePath(), MemUtils.bytesCntToStr(
-                IoTDBDescriptor.getInstance().getConfig().getBufferwriteFileSizeThreshold()));
-      }
-
-      fileNodeProcessor.closeBufferWrite();
-    }
-  }
 
   /**
    * update data.
@@ -456,138 +321,73 @@ public class FileNodeManager implements IStatistic, IService {
   public void update(String deviceId, String measurementId, long startTime, long endTime,
       TSDataType type, String v)
       throws StorageGroupManagerException {
-
-    FileNodeProcessor fileNodeProcessor = getProcessor(deviceId, true);
-    try {
-
-      long lastUpdateTime = fileNodeProcessor.getLastUpdateTime(deviceId);
-      if (startTime > lastUpdateTime) {
-        LOGGER.warn("The update range is error, startTime {} is great than lastUpdateTime {}",
-            startTime,
-            lastUpdateTime);
-        return;
-      }
-      long finalEndTime = endTime > lastUpdateTime ? lastUpdateTime : endTime;
-
-      String filenodeName = fileNodeProcessor.getProcessorName();
-      // get overflow processor
-      OverflowProcessor overflowProcessor;
-      try {
-        overflowProcessor = fileNodeProcessor.getOverflowProcessor(filenodeName);
-      } catch (IOException e) {
-        LOGGER.error(
-            "Get the overflow processor failed, the filenode is {}, "
-                + "insert time range is from {} to {}",
-            filenodeName, startTime, finalEndTime);
-        throw new StorageGroupManagerException(e);
-      }
-      overflowProcessor.update(deviceId, measurementId, startTime, finalEndTime, type, v);
-      // change the type of tsfile to overflowed
-      fileNodeProcessor.changeTypeToChanged(deviceId, startTime, finalEndTime);
-      fileNodeProcessor.setOverflowed(true);
-
-      // write wal
-      try {
-        if (IoTDBDescriptor.getInstance().getConfig().isEnableWal()) {
-          overflowProcessor.getLogNode().write(
-              new UpdatePlan(startTime, finalEndTime, v, new Path(deviceId
-                  + "." + measurementId)));
-        }
-      } catch (IOException e) {
-        throw new StorageGroupManagerException(e);
-      }
-    } finally {
-      fileNodeProcessor.writeUnlock();
-    }
+    throw new UnsupportedOperationException("Method unimplemented");
   }
 
   /**
-   * delete data.
+   * Delete data whose timestamp <= 'timestamp' of time series 'deviceId'.'measurementId'.
+   * @param deviceId
+   * @param measurementId
+   * @param timestamp
+   * @throws StorageGroupManagerException
    */
-  public void delete(String deviceId, String measurementId, long timestamp)
+  public void deleteProcessor(String deviceId, String measurementId, long timestamp)
       throws StorageGroupManagerException {
 
-    FileNodeProcessor fileNodeProcessor = getProcessor(deviceId, true);
+    StorageGroupProcessor processor = getProcessor(deviceId, true);
     try {
-      long lastUpdateTime = fileNodeProcessor.getLastUpdateTime(deviceId);
-      // no tsfile data, the delete operation is invalid
+      long lastUpdateTime;
+      try {
+        lastUpdateTime = processor.getLastInsetTime(deviceId);
+      } catch (TsFileProcessorException e) {
+        throw new StorageGroupManagerException(e);
+      }
+      // no TsFile data, the delete operation is invalid
       if (lastUpdateTime == -1) {
-        LOGGER.warn("The last update time is -1, delete overflow is invalid, "
-                + "the filenode processor is {}",
-            fileNodeProcessor.getProcessorName());
+        LOGGER.debug("The last update time is -1, deletion is invalid, "
+                + "the StorageGroup processor is {}",
+            processor.getProcessorName());
       } else {
-        // write wal
-        if (IoTDBDescriptor.getInstance().getConfig().isEnableWal()) {
-          // get processors for wal
-          String filenodeName = fileNodeProcessor.getProcessorName();
-          OverflowProcessor overflowProcessor;
-          BufferWriteProcessor bufferWriteProcessor;
-          try {
-            overflowProcessor = fileNodeProcessor.getOverflowProcessor(filenodeName);
-            // in case that no BufferWriteProcessor is available, a new BufferWriteProcessor is
-            // needed to access LogNode.
-            // TODO this may make the time range of the next TsFile a little wider
-            bufferWriteProcessor = fileNodeProcessor.getBufferWriteProcessor(filenodeName,
-                lastUpdateTime + 1);
-          } catch (IOException | FileNodeProcessorException e) {
-            LOGGER.error("Getting the processor failed, the filenode is {}, delete time is {}.",
-                filenodeName, timestamp);
-            throw new StorageGroupManagerException(e);
-          }
-          try {
-            overflowProcessor.getLogNode().write(new DeletePlan(timestamp,
-                new Path(deviceId + "." + measurementId)));
-            bufferWriteProcessor.getLogNode().write(new DeletePlan(timestamp,
-                new Path(deviceId + "." + measurementId)));
-          } catch (IOException e) {
-            throw new StorageGroupManagerException(e);
-          }
-        }
-
         try {
-          fileNodeProcessor.delete(deviceId, measurementId, timestamp);
-        } catch (IOException e) {
-          throw new StorageGroupManagerException(e);
+          processor.delete(deviceId, measurementId, timestamp);
+        } catch (TsFileProcessorException e) {
+          throw new StorageGroupManagerException(String.format("Fail to delete %s.%s at %d",
+              deviceId, measurementId, timestamp), e);
         }
-        // change the type of tsfile to overflowed
-        fileNodeProcessor.changeTypeToChangedForDelete(deviceId, timestamp);
-        fileNodeProcessor.setOverflowed(true);
-
       }
     } finally {
-      fileNodeProcessor.writeUnlock();
+      processor.writeUnlock();
     }
   }
 
-  private void delete(String processorName,
+  private void deleteProcessor(String processorName,
       Iterator<Map.Entry<String, FileNodeProcessor>> processorIterator)
       throws StorageGroupManagerException {
     if (!processorMap.containsKey(processorName)) {
-      //TODO do we need to call processorIterator.remove() ?
-      LOGGER.warn("The processorMap doesn't contain the filenode processor {}.", processorName);
+      LOGGER.warn("The processorMap doesn't contain the StorageGroupProcessor {}.", processorName);
       return;
     }
-    LOGGER.info("Try to delete the filenode processor {}.", processorName);
-    FileNodeProcessor processor = processorMap.get(processorName);
+    LOGGER.info("Try to delete the StorageGroupProcessor {}.", processorName);
+    StorageGroupProcessor processor = processorMap.get(processorName);
     if (!processor.tryWriteLock()) {
       throw new StorageGroupManagerException(String
-          .format("Can't delete the filenode processor %s because Can't get the write lock.",
+          .format("Can't delete the StorageGroupProcessor %s because Can't get the write lock.",
               processorName));
     }
 
     try {
       if (!processor.canBeClosed()) {
-        LOGGER.warn("The filenode processor {} can't be deleted.", processorName);
+        LOGGER.warn("The StorageGroupProcessor {} can't be deleted.", processorName);
         return;
       }
 
       try {
-        LOGGER.info("Delete the filenode processor {}.", processorName);
-        processor.delete();
+        LOGGER.info("Delete the StorageGroupProcessor {}.", processorName);
+        processor.close();
         processorIterator.remove();
-      } catch (ProcessorException e) {
-        LOGGER.error("Delete the filenode processor {} by iterator error.", processorName, e);
-        throw new StorageGroupManagerException(e);
+      } catch (TsFileProcessorException e) {
+        throw new StorageGroupManagerException(String.format("Delete the StorageGroupProcessor %s"
+            + " error.", processorName), e);
       }
     } finally {
       processor.writeUnlock();
@@ -595,109 +395,96 @@ public class FileNodeManager implements IStatistic, IService {
   }
 
   /**
-   * Similar to delete(), but only deletes data in BufferWrite. Only used by WAL recovery.
+   * Similar to delete(), but only deletes data in sequence files. Only used by WAL recovery.
    */
-  public void deleteBufferWrite(String deviceId, String measurementId, long timestamp)
+  public void deleteInSeqFile(String deviceId, String measurementId, long timestamp)
       throws StorageGroupManagerException {
-    FileNodeProcessor fileNodeProcessor = getProcessor(deviceId, true);
+    StorageGroupProcessor processor = getProcessor(deviceId, true);
     try {
-      fileNodeProcessor.deleteBufferWrite(deviceId, measurementId, timestamp);
-    } catch (BufferWriteProcessorException | IOException e) {
+      processor.deleteInSeqFile(deviceId, measurementId, timestamp);
+    } catch (TsFileProcessorException e) {
       throw new StorageGroupManagerException(e);
-    } finally {
-      fileNodeProcessor.writeUnlock();
     }
-    // change the type of tsfile to overflowed
-    fileNodeProcessor.changeTypeToChangedForDelete(deviceId, timestamp);
-    fileNodeProcessor.setOverflowed(true);
   }
 
   /**
    * Similar to delete(), but only deletes data in Overflow. Only used by WAL recovery.
    */
-  public void deleteOverflow(String deviceId, String measurementId, long timestamp)
+  public void deleteInOverflow(String deviceId, String measurementId, long timestamp)
       throws StorageGroupManagerException {
-    FileNodeProcessor fileNodeProcessor = getProcessor(deviceId, true);
+    StorageGroupProcessor processor = getProcessor(deviceId, true);
     try {
-      fileNodeProcessor.deleteOverflow(deviceId, measurementId, timestamp);
-    } catch (IOException e) {
+      processor.deleteInOverflow(deviceId, measurementId, timestamp);
+    } catch (TsFileProcessorException e) {
       throw new StorageGroupManagerException(e);
-    } finally {
-      fileNodeProcessor.writeUnlock();
     }
-    // change the type of tsfile to overflowed
-    fileNodeProcessor.changeTypeToChangedForDelete(deviceId, timestamp);
-    fileNodeProcessor.setOverflowed(true);
   }
 
   /**
-   * begin query.
+   * Get a StorageGroup-level token for this query so that the StorageGroupProcessor may know which
+   * queries are occupying resources.
    *
    * @param deviceId queried deviceId
    * @return a query token for the device.
    */
   public int beginQuery(String deviceId) throws StorageGroupManagerException {
-    FileNodeProcessor fileNodeProcessor = getProcessor(deviceId, true);
+    StorageGroupProcessor processor = getProcessor(deviceId, true);
     try {
-      LOGGER.debug("Get the FileNodeProcessor: filenode is {}, begin query.",
-          fileNodeProcessor.getProcessorName());
-      return fileNodeProcessor.addMultiPassCount();
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Get the FileNodeProcessor: storage group is {}, begin query.",
+            processor.getProcessorName());
+      }
+      return processor.addMultiPassCount();
     } finally {
-      fileNodeProcessor.writeUnlock();
+      processor.writeUnlock();
     }
   }
 
   /**
-   * query data.
+   * Notify the storage group of 'deviceId' that query 'token' has ended and its resource can be
+   * released.
+   */
+  public void endQuery(String deviceId, int token) throws StorageGroupManagerException {
+
+    StorageGroupProcessor processorrocessor = getProcessor(deviceId, true);
+    try {
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Get the FileNodeProcessor: {} end query.",
+            processorrocessor.getProcessorName());
+      }
+      processorrocessor.decreaseMultiPassCount(token);
+    } finally {
+      processorrocessor.writeUnlock();
+    }
+  }
+
+  /**
+   * Find sealed files, unsealed file and memtable data in SeqFiles and OverflowFiles that contains the
+   * given series.
+   * @param seriesExpression provides the path of the series.
+   * @param context provides shared modifications across a query.
+   * @return sealed files, unsealed file and memtable data in SeqFiles or OverflowFiles
+   * @throws StorageGroupManagerException
    */
   public QueryDataSource query(SingleSeriesExpression seriesExpression, QueryContext context)
       throws StorageGroupManagerException {
     String deviceId = seriesExpression.getSeriesPath().getDevice();
-    String measurementId = seriesExpression.getSeriesPath().getMeasurement();
-    FileNodeProcessor fileNodeProcessor = getProcessor(deviceId, false);
-    LOGGER.debug("Get the FileNodeProcessor: filenode is {}, query.",
-        fileNodeProcessor.getProcessorName());
+    StorageGroupProcessor processor = getProcessor(deviceId, false);
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Get the FileNodeProcessor: filenode is {}, query.",
+          processor.getProcessorName());
+    }
     try {
       QueryDataSource queryDataSource;
-      // query operation must have overflow processor
-      if (!fileNodeProcessor.hasOverflowProcessor()) {
-        try {
-          fileNodeProcessor.getOverflowProcessor(fileNodeProcessor.getProcessorName());
-        } catch (IOException e) {
-          LOGGER.error("Get the overflow processor failed, the filenode is {}, query is {},{}",
-              fileNodeProcessor.getProcessorName(), deviceId, measurementId);
-          throw new StorageGroupManagerException(e);
-        }
-      }
       try {
-        queryDataSource = fileNodeProcessor.query(deviceId, measurementId, context);
-      } catch (FileNodeProcessorException e) {
-        LOGGER.error("Query error: the deviceId {}, the measurementId {}", deviceId, measurementId,
-            e);
+        queryDataSource = processor.query(seriesExpression, context);
+      } catch (TsFileProcessorException e) {
         throw new StorageGroupManagerException(e);
       }
       // return query structure
       return queryDataSource;
     } finally {
-      fileNodeProcessor.readUnlock();
-    }
-  }
-
-  /**
-   * end query.
-   */
-  public void endQuery(String deviceId, int token) throws StorageGroupManagerException {
-
-    FileNodeProcessor fileNodeProcessor = getProcessor(deviceId, true);
-    try {
-      LOGGER.debug("Get the FileNodeProcessor: {} end query.",
-          fileNodeProcessor.getProcessorName());
-      fileNodeProcessor.decreaseMultiPassCount(token);
-    } catch (FileNodeProcessorException e) {
-      LOGGER.error("Failed to end query: the deviceId {}, token {}.", deviceId, token, e);
-      throw new StorageGroupManagerException(e);
-    } finally {
-      fileNodeProcessor.writeUnlock();
+      processor.readUnlock();
     }
   }
 
@@ -710,23 +497,23 @@ public class FileNodeManager implements IStatistic, IService {
    */
   public boolean appendFileToFileNode(String fileNodeName, TsFileResource appendFile,
       String appendFilePath) throws StorageGroupManagerException {
-    FileNodeProcessor fileNodeProcessor = getProcessor(fileNodeName, true);
+    StorageGroupProcessor processor = getProcessor(fileNodeName, true);
     try {
       // check append file
       for (Map.Entry<String, Long> entry : appendFile.getStartTimeMap().entrySet()) {
-        if (fileNodeProcessor.getLastUpdateTime(entry.getKey()) >= entry.getValue()) {
+        if (processor.getLastInsetTime(entry.getKey()) >= entry.getValue()) {
           return false;
         }
       }
       // close bufferwrite file
-      fileNodeProcessor.closeBufferWrite();
+      processor.close();
       // append file to storage group.
-      fileNodeProcessor.appendFile(appendFile, appendFilePath);
-    } catch (FileNodeProcessorException e) {
+      processor.appendFile(appendFile, appendFilePath);
+    } catch (TsFileProcessorException e) {
       LOGGER.error("Cannot append the file {} to {}", appendFile.getFile().getAbsolutePath(), fileNodeName, e);
       throw new StorageGroupManagerException(e);
     } finally {
-      fileNodeProcessor.writeUnlock();
+      processor.writeUnlock();
     }
     return true;
   }
@@ -1040,7 +827,7 @@ public class FileNodeManager implements IStatistic, IService {
           .iterator();
       while (processorIterator.hasNext()) {
         Map.Entry<String, FileNodeProcessor> processorEntry = processorIterator.next();
-        delete(processorEntry.getKey(), processorIterator);
+        deleteProcessor(processorEntry.getKey(), processorIterator);
       }
       return processorMap.isEmpty();
     } finally {
@@ -1209,7 +996,7 @@ public class FileNodeManager implements IStatistic, IService {
     private FileNodeManagerHolder() {
     }
 
-    private static final FileNodeManager INSTANCE = new FileNodeManager(
+    private static final StorageGroupManager INSTANCE = new StorageGroupManager(
         TsFileDBConf.getFileNodeDir());
   }
 

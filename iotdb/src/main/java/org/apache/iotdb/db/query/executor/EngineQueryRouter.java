@@ -24,7 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import org.apache.iotdb.db.engine.tsfiledata.TsFileProcessor;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.ProcessorException;
 import org.apache.iotdb.db.query.context.QueryContext;
@@ -57,7 +57,7 @@ public class EngineQueryRouter {
    * execute physical plan.
    */
   public QueryDataSet query(QueryExpression queryExpression, QueryContext context)
-      throws FileNodeManagerException {
+      throws StorageGroupManagerException {
 
     if (queryExpression.hasQueryFilter()) {
       try {
@@ -76,7 +76,7 @@ public class EngineQueryRouter {
         }
 
       } catch (QueryFilterOptimizationException e) {
-        throw new FileNodeManagerException(e);
+        throw new StorageGroupManagerException(e);
       }
     } else {
       EngineExecutorWithoutTimeGenerator engineExecutor = new EngineExecutorWithoutTimeGenerator(
@@ -90,7 +90,7 @@ public class EngineQueryRouter {
    */
   public QueryDataSet aggregate(List<Path> selectedSeries, List<String> aggres,
       IExpression expression, QueryContext context) throws QueryFilterOptimizationException,
-      FileNodeManagerException, IOException, PathErrorException, ProcessorException {
+      StorageGroupManagerException, IOException, PathErrorException, ProcessorException {
 
     if (expression != null) {
       IExpression optimizedExpression = ExpressionOptimizer.getInstance()
@@ -123,7 +123,7 @@ public class EngineQueryRouter {
   public QueryDataSet groupBy(List<Path> selectedSeries, List<String> aggres,
       IExpression expression, long unit, long origin, List<Pair<Long, Long>> intervals,
       QueryContext context)
-      throws ProcessorException, QueryFilterOptimizationException, FileNodeManagerException,
+      throws ProcessorException, QueryFilterOptimizationException, StorageGroupManagerException,
       PathErrorException, IOException {
 
     long nextJobId = context.getJobId();
@@ -188,7 +188,7 @@ public class EngineQueryRouter {
    */
   public QueryDataSet fill(List<Path> fillPaths, long queryTime, Map<TSDataType, IFill> fillType,
       QueryContext context)
-      throws FileNodeManagerException, PathErrorException, IOException {
+      throws StorageGroupManagerException, PathErrorException, IOException {
 
     long nextJobId = context.getJobId();
 
@@ -227,7 +227,7 @@ public class EngineQueryRouter {
    */
   public QueryDataSet query(QueryExpression queryExpression, TsFileProcessor processor,
       QueryContext context)
-      throws FileNodeManagerException, IOException {
+      throws StorageGroupManagerException, IOException {
 
     if (queryExpression.hasQueryFilter()) {
       throw new NotImplementedException("this function is just for test...");

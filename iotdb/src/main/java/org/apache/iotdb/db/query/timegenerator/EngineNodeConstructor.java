@@ -25,7 +25,7 @@ import static org.apache.iotdb.tsfile.read.expression.ExpressionType.SERIES;
 
 import java.io.IOException;
 import org.apache.iotdb.db.engine.querycontext.QueryDataSource;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.query.context.QueryContext;
 import org.apache.iotdb.db.query.control.QueryResourceManager;
 import org.apache.iotdb.db.query.factory.SeriesReaderFactory;
@@ -54,16 +54,16 @@ public class EngineNodeConstructor {
    * @param expression expression
    * @return Node object
    * @throws IOException IOException
-   * @throws FileNodeManagerException FileNodeManagerException
+   * @throws StorageGroupManagerException StorageGroupManagerException
    */
   public Node construct(IExpression expression, QueryContext context)
-      throws FileNodeManagerException {
+      throws StorageGroupManagerException {
     if (expression.getType() == SERIES) {
       try {
         return new EngineLeafNode(generateSeriesReader((SingleSeriesExpression) expression,
             context));
       } catch (IOException e) {
-        throw new FileNodeManagerException(e);
+        throw new StorageGroupManagerException(e);
       }
     } else {
       Node leftChild;
@@ -85,7 +85,7 @@ public class EngineNodeConstructor {
 
   private IReader generateSeriesReader(SingleSeriesExpression singleSeriesExpression,
       QueryContext context)
-      throws IOException, FileNodeManagerException {
+      throws IOException, StorageGroupManagerException {
 
     QueryDataSource queryDataSource = QueryResourceManager.getInstance().getQueryDataSource(
         singleSeriesExpression.getSeriesPath(), context);

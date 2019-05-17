@@ -18,6 +18,7 @@
  */
 package org.apache.iotdb.db.engine.pool;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -106,6 +107,10 @@ public class MergeManager {
   }
 
   public Future<?> submit(Runnable task) {
+    return pool.submit(task);
+  }
+
+  public Future<?> submit(Callable task) {
     return pool.submit(task);
   }
 

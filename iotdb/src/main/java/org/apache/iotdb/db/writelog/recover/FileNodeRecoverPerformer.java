@@ -19,7 +19,7 @@
 package org.apache.iotdb.db.writelog.recover;
 
 import org.apache.iotdb.db.engine.filenode.FileNodeManager;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.RecoverException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +43,7 @@ public class FileNodeRecoverPerformer implements RecoverPerformer {
   public void recover() throws RecoverException {
     try {
       FileNodeManager.getInstance().recoverFileNode(getFileNodeName());
-    } catch (FileNodeManagerException e) {
+    } catch (StorageGroupManagerException e) {
       logger.error("Cannot recover filenode {}", identifier);
       throw new RecoverException(e);
     }

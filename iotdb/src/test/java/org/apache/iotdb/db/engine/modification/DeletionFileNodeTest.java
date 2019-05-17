@@ -34,7 +34,7 @@ import org.apache.iotdb.db.conf.directories.Directories;
 import org.apache.iotdb.db.engine.filenode.FileNodeManager;
 import org.apache.iotdb.db.engine.modification.io.LocalTextModificationAccessor;
 import org.apache.iotdb.db.engine.querycontext.QueryDataSource;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.MetadataArgsErrorException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.StartupException;
@@ -70,7 +70,7 @@ public class DeletionFileNodeTest {
 
   @Before
   public void setup() throws MetadataArgsErrorException,
-      PathErrorException, IOException, FileNodeManagerException, StartupException {
+      PathErrorException, IOException, StorageGroupManagerException, StartupException {
     EnvironmentUtils.envSetUp();
 
     MManager.getInstance().setStorageLevelToMTree(processorName);
@@ -85,13 +85,13 @@ public class DeletionFileNodeTest {
   }
 
   @After
-  public void teardown() throws IOException, FileNodeManagerException {
+  public void teardown() throws IOException, StorageGroupManagerException {
     EnvironmentUtils.cleanEnv();
   }
 
   @Test
   public void testDeleteInBufferWriteCache() throws
-      FileNodeManagerException {
+      StorageGroupManagerException {
 
     for (int i = 1; i <= 100; i++) {
       TSRecord record = new TSRecord(i, processorName);
@@ -124,7 +124,7 @@ public class DeletionFileNodeTest {
   }
 
   @Test
-  public void testDeleteInBufferWriteFile() throws FileNodeManagerException, IOException {
+  public void testDeleteInBufferWriteFile() throws StorageGroupManagerException, IOException {
     for (int i = 1; i <= 100; i++) {
       TSRecord record = new TSRecord(i, processorName);
       for (int j = 0; j < 10; j++) {
@@ -166,7 +166,7 @@ public class DeletionFileNodeTest {
   }
 
   @Test
-  public void testDeleteInOverflowCache() throws FileNodeManagerException {
+  public void testDeleteInOverflowCache() throws StorageGroupManagerException {
     // insert into BufferWrite
     for (int i = 101; i <= 200; i++) {
       TSRecord record = new TSRecord(i, processorName);
@@ -211,7 +211,7 @@ public class DeletionFileNodeTest {
   }
 
   @Test
-  public void testDeleteInOverflowFile() throws FileNodeManagerException, IOException {
+  public void testDeleteInOverflowFile() throws StorageGroupManagerException, IOException {
     // insert into BufferWrite
     for (int i = 101; i <= 200; i++) {
       TSRecord record = new TSRecord(i, processorName);

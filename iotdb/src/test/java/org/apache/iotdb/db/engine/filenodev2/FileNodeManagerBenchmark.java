@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.iotdb.db.engine.filenode.FileNodeManager;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.MetadataArgsErrorException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.metadata.MManager;
@@ -72,13 +72,13 @@ public class FileNodeManagerBenchmark {
     }
   }
 
-  private static void tearDown() throws IOException, FileNodeManagerException {
+  private static void tearDown() throws IOException, StorageGroupManagerException {
     EnvironmentUtils.cleanEnv();
   }
 
   public static void main(String[] args)
       throws InterruptedException, IOException, MetadataArgsErrorException,
-      PathErrorException, FileNodeManagerException {
+      PathErrorException, StorageGroupManagerException {
     tearDown();
     prepare();
     long startTime = System.currentTimeMillis();
@@ -115,7 +115,7 @@ public class FileNodeManagerBenchmark {
           TSRecord tsRecord = getRecord(deltaObject, time);
           FileNodeManager.getInstance().insert(tsRecord, true);
         }
-      } catch (FileNodeManagerException e) {
+      } catch (StorageGroupManagerException e) {
         e.printStackTrace();
       } finally {
         latch.countDown();

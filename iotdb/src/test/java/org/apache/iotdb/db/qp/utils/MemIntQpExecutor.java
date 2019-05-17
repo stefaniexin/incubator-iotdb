@@ -27,7 +27,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.ProcessorException;
 import org.apache.iotdb.db.qp.constant.SQLConstant;
@@ -111,7 +111,7 @@ public class MemIntQpExecutor extends QueryProcessExecutor {
   @Override
   public QueryDataSet aggregate(List<Path> paths, List<String> aggres, IExpression expression,
       QueryContext context)
-      throws ProcessorException, IOException, PathErrorException, FileNodeManagerException,
+      throws ProcessorException, IOException, PathErrorException, StorageGroupManagerException,
       QueryFilterOptimizationException {
     return null;
   }
@@ -119,7 +119,7 @@ public class MemIntQpExecutor extends QueryProcessExecutor {
   @Override
   public QueryDataSet groupBy(List<Path> paths, List<String> aggres, IExpression expression,
       long unit, long origin, List<Pair<Long, Long>> intervals, QueryContext context)
-      throws ProcessorException, IOException, PathErrorException, FileNodeManagerException,
+      throws ProcessorException, IOException, PathErrorException, StorageGroupManagerException,
       QueryFilterOptimizationException {
     return null;
   }
@@ -127,7 +127,7 @@ public class MemIntQpExecutor extends QueryProcessExecutor {
   @Override
   public QueryDataSet fill(List<Path> fillPaths, long queryTime, Map<TSDataType, IFill> fillTypes,
       QueryContext context)
-      throws ProcessorException, IOException, PathErrorException, FileNodeManagerException {
+      throws ProcessorException, IOException, PathErrorException, StorageGroupManagerException {
     return null;
   }
 

@@ -321,8 +321,8 @@ public class MGraph implements Serializable {
   /**
    * Get all file names for given seriesPath
    */
-  public List<String> getAllFileNamesByPath(String path) throws PathErrorException {
-    return mtree.getAllFileNamesByPath(path);
+  public List<String> getAllStorageGroupsByPath(String path) throws PathErrorException {
+    return mtree.getAllStorageGroupsByPath(path);
   }
 
   /**

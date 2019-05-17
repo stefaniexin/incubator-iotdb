@@ -22,7 +22,7 @@ package org.apache.iotdb.db.query.executor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.metadata.MManager;
 import org.apache.iotdb.db.query.context.QueryContext;
@@ -52,9 +52,9 @@ public class EngineExecutorWithTimeGenerator {
    *
    * @return QueryDataSet object
    * @throws IOException IOException
-   * @throws FileNodeManagerException FileNodeManagerException
+   * @throws StorageGroupManagerException StorageGroupManagerException
    */
-  public QueryDataSet execute(QueryContext context) throws FileNodeManagerException {
+  public QueryDataSet execute(QueryContext context) throws StorageGroupManagerException {
 
     QueryResourceManager.getInstance()
         .beginQueryOfGivenQueryPaths(context.getJobId(), queryExpression.getSelectedSeries());
@@ -68,7 +68,7 @@ public class EngineExecutorWithTimeGenerator {
       readersOfSelectedSeries = SeriesReaderFactory
           .getByTimestampReadersOfSelectedPaths(queryExpression.getSelectedSeries(), context);
     } catch (IOException ex) {
-      throw new FileNodeManagerException(ex);
+      throw new StorageGroupManagerException(ex);
     }
 
     List<TSDataType> dataTypes = new ArrayList<>();
@@ -77,7 +77,7 @@ public class EngineExecutorWithTimeGenerator {
       try {
         dataTypes.add(MManager.getInstance().getSeriesType(path.getFullPath()));
       } catch (PathErrorException e) {
-        throw new FileNodeManagerException(e);
+        throw new StorageGroupManagerException(e);
       }
 
     }

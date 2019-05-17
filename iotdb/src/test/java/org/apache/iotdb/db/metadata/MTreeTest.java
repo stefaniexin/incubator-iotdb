@@ -22,9 +22,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.serializer.SerializerFeature;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -274,12 +271,12 @@ public class MTreeTest {
       List<String> list = new ArrayList<>();
 
       list.add("root.laptop.d1");
-      assertEquals(list, root.getAllFileNamesByPath("root.laptop.d1.s1"));
-      assertEquals(list, root.getAllFileNamesByPath("root.laptop.d1"));
+      assertEquals(list, root.getAllStorageGroupsByPath("root.laptop.d1.s1"));
+      assertEquals(list, root.getAllStorageGroupsByPath("root.laptop.d1"));
 
       list.add("root.laptop.d2");
-      assertEquals(list, root.getAllFileNamesByPath("root.laptop"));
-      assertEquals(list, root.getAllFileNamesByPath("root"));
+      assertEquals(list, root.getAllStorageGroupsByPath("root.laptop"));
+      assertEquals(list, root.getAllStorageGroupsByPath("root"));
     } catch (PathErrorException e) {
       e.printStackTrace();
       fail(e.getMessage());

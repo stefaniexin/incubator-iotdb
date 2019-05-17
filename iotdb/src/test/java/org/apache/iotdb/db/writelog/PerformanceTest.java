@@ -20,14 +20,12 @@ package org.apache.iotdb.db.writelog;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import org.apache.iotdb.db.conf.IoTDBConfig;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.MetadataArgsErrorException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.RecoverException;
-import org.apache.iotdb.db.exception.WALOverSizedException;
 import org.apache.iotdb.db.metadata.MManager;
 import org.apache.iotdb.db.qp.physical.crud.DeletePlan;
 import org.apache.iotdb.db.qp.physical.crud.InsertPlan;
@@ -123,7 +121,7 @@ public class PerformanceTest {
 
   @Test
   public void recoverTest()
-      throws IOException, RecoverException, FileNodeManagerException, PathErrorException,
+      throws IOException, RecoverException, StorageGroupManagerException, PathErrorException,
       MetadataArgsErrorException {
     // this test write 1000000 * 3 logs , recover from them and report elapsed time
     if (skip) {

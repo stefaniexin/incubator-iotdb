@@ -18,9 +18,8 @@
  */
 package org.apache.iotdb.db.writelog.replay;
 
-import java.util.List;
 import org.apache.iotdb.db.engine.filenode.FileNodeManager;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.ProcessorException;
 import org.apache.iotdb.db.metadata.MManager;
@@ -62,7 +61,7 @@ public class ConcreteLogReplayer implements LogReplayer {
   }
 
   private void multiInsert(InsertPlan insertPlan)
-      throws PathErrorException, FileNodeManagerException {
+      throws PathErrorException, StorageGroupManagerException {
     String deviceId = insertPlan.getDeviceId();
     long insertTime = insertPlan.getTime();
     String[] measurementList = insertPlan.getMeasurements();
@@ -79,7 +78,7 @@ public class ConcreteLogReplayer implements LogReplayer {
     FileNodeManager.getInstance().insert(tsRecord, true);
   }
 
-  private void update(UpdatePlan updatePlan) throws FileNodeManagerException, PathErrorException {
+  private void update(UpdatePlan updatePlan) throws StorageGroupManagerException, PathErrorException {
     TSDataType dataType = MManager.getInstance().getSeriesType(updatePlan.getPath().getFullPath());
     for (Pair<Long, Long> timePair : updatePlan.getIntervals()) {
       FileNodeManager.getInstance().update(updatePlan.getPath().getDevice(),
@@ -88,7 +87,7 @@ public class ConcreteLogReplayer implements LogReplayer {
     }
   }
 
-  private void delete(DeletePlan deletePlan, boolean isOverflow) throws FileNodeManagerException {
+  private void delete(DeletePlan deletePlan, boolean isOverflow) throws StorageGroupManagerException {
     for (Path path : deletePlan.getPaths()) {
       if (isOverflow) {
         FileNodeManager.getInstance().deleteOverflow(path.getDevice(), path.getMeasurement(),

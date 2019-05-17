@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.apache.iotdb.db.engine.querycontext.QueryDataSource;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.metadata.MManager;
 import org.apache.iotdb.db.query.context.QueryContext;
@@ -58,7 +58,7 @@ public class FillEngineExecutor {
    * @param context query context
    */
   public QueryDataSet execute(QueryContext context)
-      throws FileNodeManagerException, PathErrorException, IOException {
+      throws StorageGroupManagerException, PathErrorException, IOException {
     QueryResourceManager.getInstance().beginQueryOfGivenQueryPaths(jobId, selectedSeries);
 
     List<IFill> fillList = new ArrayList<>();

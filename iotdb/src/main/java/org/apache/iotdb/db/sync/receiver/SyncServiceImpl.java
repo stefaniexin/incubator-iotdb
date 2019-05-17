@@ -46,7 +46,7 @@ import org.apache.iotdb.db.conf.directories.Directories;
 import org.apache.iotdb.db.engine.filenode.FileNodeManager;
 import org.apache.iotdb.db.engine.filenode.OverflowChangeType;
 import org.apache.iotdb.db.engine.filenode.TsFileResource;
-import org.apache.iotdb.db.exception.FileNodeManagerException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.MetadataArgsErrorException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.ProcessorException;
@@ -440,7 +440,7 @@ public class SyncServiceImpl implements SyncService.Iface {
    * directly. If data in the tsfile is old, it has two strategy to merge.It depends on the
    * possibility of updating historical data.
    */
-  public void loadData() throws FileNodeManagerException {
+  public void loadData() throws StorageGroupManagerException {
     syncDataPath = FilePathUtils.regularizePath(syncDataPath);
     int processedNum = 0;
     for (String storageGroup : fileNodeMap.get().keySet()) {
@@ -469,8 +469,7 @@ public class SyncServiceImpl implements SyncService.Iface {
         // create a new fileNode
         String header = syncDataPath;
         String relativePath = path.substring(header.length());
-        TsFileResource fileNode = new TsFileResource(startTimeMap, endTimeMap,
-            OverflowChangeType.NO_CHANGE, new File(
+        TsFileResource fileNode = new TsFileResource(startTimeMap, endTimeMap, new File(
             Directories.getInstance().getNextFolderIndexForTsFile() + File.separator + relativePath)
         );
         // call interface of load external file
@@ -490,9 +489,9 @@ public class SyncServiceImpl implements SyncService.Iface {
               }
             }
           }
-        } catch (FileNodeManagerException | IOException | ProcessorException e) {
+        } catch (StorageGroupManagerException | IOException | ProcessorException e) {
           logger.error("Can not load external file {}", path);
-          throw new FileNodeManagerException(e);
+          throw new StorageGroupManagerException(e);
         }
         processedNum++;
         logger.info(String

@@ -28,6 +28,4 @@ public enum OperationResult {
   WRITE_REJECT_BY_TIME,
   //the write operation is reject because there is no available memory
   WRITE_REJECT_BY_MEM,
-  //attempts to write a closed FileProcessor
-  WRITE_REJECT_BY_CLOSED_PROCESSOR,
 }

@@ -30,6 +30,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -58,11 +59,13 @@ import org.apache.iotdb.db.engine.querycontext.SeriesDataSource;
 import org.apache.iotdb.db.engine.querycontext.UnsealedTsFile;
 import org.apache.iotdb.db.engine.sgmanager.OperationResult;
 import org.apache.iotdb.db.engine.version.VersionController;
+import org.apache.iotdb.db.exception.FileNodeProcessorException;
 import org.apache.iotdb.db.exception.TsFileProcessorException;
 import org.apache.iotdb.db.qp.constant.DatetimeUtils;
 import org.apache.iotdb.db.qp.physical.crud.InsertPlan;
 import org.apache.iotdb.db.qp.physical.crud.UpdatePlan;
 import org.apache.iotdb.db.query.context.QueryContext;
+import org.apache.iotdb.db.sync.SyncUtils;
 import org.apache.iotdb.db.utils.ImmediateFuture;
 import org.apache.iotdb.db.utils.MemUtils;
 import org.apache.iotdb.db.utils.QueryUtils;
@@ -241,32 +244,32 @@ public class TsFileProcessor extends Processor {
         .parseLong(x.getName().split(FileNodeConstants.BUFFERWRITE_FILE_SEPARATOR)[0])));
 
     for (File tsfile : tsFiles) {
-      addResource(tsfile, unclosedFileName);
+      if (!tsfile.getName().equals(unclosedFileName)) {
+        addResource(tsfile);
+      }
     }
   }
 
   // add one TsFiles to tsFileResources and update device inserted time map
-  private void addResource(File tsfile, String unclosedFileName) throws TsFileProcessorException {
+  private void addResource(File tsfile) throws TsFileProcessorException {
     //TODO we'd better define a file suffix for TsFile, e.g., .ts
     String[] names = tsfile.getName().split(FileNodeConstants.BUFFERWRITE_FILE_SEPARATOR);
     long time = Long.parseLong(names[0]);
     if (fileNamePrefix < time) {
       fileNamePrefix = time;
     }
-    if (!tsfile.getName().equals(unclosedFileName)) {
-      TsFileResource resource;
-      try {
-        resource = new TsFileResource(tsfile, true);
-      } catch (IOException e) {
-        throw new TsFileProcessorException(e);
-      }
-      tsFileResources.add(resource);
-      //maintain the inverse index and fileNamePrefix
-      for (String device : resource.getDevices()) {
-        inverseIndexOfResource.computeIfAbsent(device, k -> new ArrayList<>()).add(resource);
-        lastFlushedTimeForEachDevice
-            .merge(device, resource.getEndTime(device), (x, y) -> x > y ? x : y);
-      }
+    TsFileResource resource;
+    try {
+      resource = new TsFileResource(tsfile, true);
+    } catch (IOException e) {
+      throw new TsFileProcessorException(e);
+    }
+    tsFileResources.add(resource);
+    //maintain the inverse index and fileNamePrefix
+    for (String device : resource.getDevices()) {
+      inverseIndexOfResource.computeIfAbsent(device, k -> new ArrayList<>()).add(resource);
+      lastFlushedTimeForEachDevice
+          .merge(device, resource.getEndTime(device), (x, y) -> x > y ? x : y);
     }
   }
 
@@ -292,7 +295,7 @@ public class TsFileProcessor extends Processor {
     this.insertFile = file;
     try {
       writer = new RestorableTsFileIOWriter(processorName, insertFile.getAbsolutePath());
-      this.currentResource = new TsFileResource(insertFile, writer);
+      currentResource = new TsFileResource(insertFile, writer);
     } catch (IOException e) {
       throw new TsFileProcessorException(e);
     }
@@ -315,15 +318,20 @@ public class TsFileProcessor extends Processor {
    * WRITE_REJECT_BY_MEM)
    * @throws TsFileProcessorException if a flushing operation occurs and failed.
    */
-  public OperationResult insert(InsertPlan plan) throws TsFileProcessorException, IOException {
+  public OperationResult insert(InsertPlan plan) throws TsFileProcessorException {
     if (isClosed) {
-      return OperationResult.WRITE_REJECT_BY_CLOSED_PROCESSOR;
+      reopen();
     }
     if (!canWrite(plan.getDeviceId(), plan.getTime())) {
       return OperationResult.WRITE_REJECT_BY_TIME;
     }
     if (IoTDBDescriptor.getInstance().getConfig().isEnableWal()) {
-      logNode.write(plan);
+      try {
+        logNode.write(plan);
+      } catch (IOException e) {
+        throw new TsFileProcessorException(String.format("Fail to write wal for %s",
+            plan.toString()), e);
+      }
     }
     long memUsage = 0;
     TSDataType type;
@@ -462,6 +470,9 @@ public class TsFileProcessor extends Processor {
    */
   @Override
   public Future<Boolean> flush() throws IOException {
+    if (isClosed) {
+      return null;
+    }
     // waiting for the end of last flush operation.
     try {
       flushFuture.get();
@@ -611,6 +622,7 @@ public class TsFileProcessor extends Processor {
   //very dangerous, how to make sure this function is thread safe (no other functions are running)
   private void closeCurrentFile() throws TsFileProcessorException {
     try {
+      flush().get();
       long closeStartTime = System.currentTimeMillis();
       // end file
       if (writer.getChunkGroupMetaDatas().isEmpty()){
@@ -661,7 +673,7 @@ public class TsFileProcessor extends Processor {
 
   @Override
   public long memoryUsage() {
-    return 0;
+    return memSize.get();
   }
 
   /**
@@ -782,6 +794,7 @@ public class TsFileProcessor extends Processor {
     } catch (IOException e) {
       throw new TsFileProcessorException(e);
     }
+    isClosed = true;
   }
 
   /**
@@ -862,5 +875,79 @@ public class TsFileProcessor extends Processor {
     } catch (IOException e) {
       throw new TsFileProcessorException(e);
     }
+  }
+
+  public long getLastInsertTime(String deviceId) {
+    // generally speaking, currentTime > historicalTime, unless currentTime does not exist
+    long historicalTime = lastFlushedTimeForEachDevice.getOrDefault(deviceId, -1L);
+    long currentTime = maxWrittenTimeForEachDeviceInCurrentFile.getOrDefault(deviceId, -1L);
+    return Long.max(historicalTime, currentTime);
+  }
+
+  /**
+   * Append a new TsFile for the sync module. The appended file can only contain new data w.r.t the
+   * existing files.
+   * @param tsFileResource
+   */
+  public void appendFile(TsFileResource tsFileResource) {
+    this.tsFileResources.add(tsFileResource);
+    for (Entry<String, Long> entry : tsFileResource.getEndTimeMap().entrySet()) {
+      lastFlushedTimeForEachDevice.put(entry.getKey(), entry.getValue());
+      maxWrittenTimeForEachDeviceInCurrentFile.put(entry.getKey(), entry.getValue());
+      // the new file may contain new time series
+      if (!minWrittenTimeForEachDeviceInCurrentFile.containsKey(entry.getKey())) {
+        minWrittenTimeForEachDeviceInCurrentFile.put(entry.getKey(), entry.getValue());
+      }
+      inverseIndexOfResource.computeIfAbsent(entry.getKey(),
+          k -> new ArrayList<>()).add(tsFileResource);
+    }
+  }
+
+  /**
+   * get overlap tsfiles which are conflict with the appendFile.
+   *
+   * @param appendFile the appended tsfile information
+   */
+  public List<String> getOverlapFiles(TsFileResource appendFile, String uuid)
+      throws FileNodeProcessorException {
+    List<String> overlapFiles = new ArrayList<>();
+    try {
+      for (TsFileResource tsFileResource : tsFileResources) {
+        getOverlapFile(appendFile, tsFileResource, uuid, overlapFiles);
+      }
+    } catch (IOException e) {
+      throw new FileNodeProcessorException(String.format("Failed to get tsfiles "
+          + "which overlap with the appendFile: %s.", appendFile.getFilePath()), e);
+    }
+    return overlapFiles;
+  }
+
+  private void getOverlapFile(TsFileResource appendFile, TsFileResource tsFileResource,
+      String uuid, List<String> overlapFiles) throws IOException {
+    if (!tsFileResource.overlaps(appendFile)) {
+      return;
+    }
+    // create a link to the overlapped file to avoid modifying the original file link
+    File newFile = SyncUtils.linkFile(uuid, tsFileResource);
+    overlapFiles.add(newFile.getPath());
+  }
+
+  /**
+   * the total size of all TsFiles.
+   * @return
+   */
+  public long totalFileSize() {
+    long fileSize = 0;
+    for (TsFileResource resource : tsFileResources) {
+      fileSize += resource.getFile().length();
+    }
+    if (currentResource != null) {
+      fileSize += currentResource.getFile().length();
+    }
+    return fileSize;
+  }
+
+  public List<TsFileResource> getTsFileResources() {
+    return tsFileResources;
   }
 }
