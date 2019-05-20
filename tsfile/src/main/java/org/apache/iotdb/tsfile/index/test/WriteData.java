@@ -27,30 +27,34 @@ public class WriteData {
       TsFileWriter tsFileWriter = new TsFileWriter(f);
 
       // add measurements into file schema
-      for (int i = 1; i <= 5; i++) {
+      for (int i = 1; i <= 50; i++) {
         tsFileWriter
             .addMeasurement(new MeasurementSchema("sensor_" + i, TSDataType.FLOAT, TSEncoding.RLE));
       }
-      for (int i = 6; i <= 10; i++) {
+      for (int i = 51; i <= 100; i++) {
         tsFileWriter
             .addMeasurement(new MeasurementSchema("sensor_" + i, TSDataType.INT32, TSEncoding.TS_2DIFF));
       }
 
       for (long time = 1; time <= 10000; time++) {
 
-        TSRecord tsRecord = new TSRecord(time, "device_1");
+        for (int deviceId = 1; deviceId <= 5; deviceId++) {
 
-        for (int i = 1; i <= 5; i++) {
-          DataPoint dPoint1 = new FloatDataPoint("sensor_" + i, 1.0f * random.nextInt(100));
-          tsRecord.addTuple(dPoint1);
+          TSRecord tsRecord = new TSRecord(time, "device_" + deviceId);
+
+          for (int i = 1; i <= 50; i++) {
+            DataPoint dPoint1 = new FloatDataPoint("sensor_" + i, 1.0f * random.nextInt(100));
+            tsRecord.addTuple(dPoint1);
+          }
+
+          for (int i = 51; i <= 100; i++) {
+            DataPoint dPoint2 = new IntDataPoint("sensor_" + i, random.nextInt(100));
+            tsRecord.addTuple(dPoint2);
+          }
+
+          tsFileWriter.write(tsRecord);
         }
 
-        for (int i = 6; i <= 10; i++) {
-          DataPoint dPoint2 = new IntDataPoint("sensor_" + i, random.nextInt(100));
-          tsRecord.addTuple(dPoint2);
-        }
-
-        tsFileWriter.write(tsRecord);
       }
 
       // close TsFile
