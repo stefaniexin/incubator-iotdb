@@ -88,13 +88,8 @@ public class QPExecutorUtils {
     for (int i = 0; i < sgList.size(); i++) {
       String sg = sgList.get(i);
       String groupId = router.getGroupIdBySG(sg);
-      if (map.containsKey(groupId)) {
-        map.get(groupId).add(sg);
-      } else {
-        Set<String> set = new HashSet<>();
-        set.add(sg);
-        map.put(groupId, set);
-      }
+      map.putIfAbsent(groupId, new HashSet<>());
+      map.get(groupId).add(sg);
     }
     return map;
   }

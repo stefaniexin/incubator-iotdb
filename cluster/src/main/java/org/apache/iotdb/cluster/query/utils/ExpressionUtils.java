@@ -51,9 +51,7 @@ public class ExpressionUtils {
     if (expression.getType() == ExpressionType.SERIES) {
       Path path = ((SingleSeriesExpression) expression).getSeriesPath();
       String groupId = QPExecutorUtils.getGroupIdByDevice(path.getDevice());
-      if (!filterGroupEntityMap.containsKey(groupId)) {
-        filterGroupEntityMap.put(groupId, new FilterSeriesGroupEntity(groupId));
-      }
+      filterGroupEntityMap.putIfAbsent(groupId, new FilterSeriesGroupEntity(groupId));
       FilterSeriesGroupEntity filterSeriesGroupEntity = filterGroupEntityMap.get(groupId);
       filterSeriesGroupEntity.addFilterPaths(path);
       filterSeriesGroupEntity.addFilter(((SingleSeriesExpression) expression).getFilter());

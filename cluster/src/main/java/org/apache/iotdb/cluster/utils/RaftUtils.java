@@ -144,10 +144,7 @@ public class RaftUtils {
    * @return leader id
    */
   public static PeerId getLocalLeaderPeerID(String groupId) {
-    if (!groupLeaderCache.containsKey(groupId)) {
-      PeerId randomPeerId = getRandomPeerID(groupId);
-      groupLeaderCache.put(groupId, randomPeerId);
-    }
+    groupLeaderCache.putIfAbsent(groupId, getRandomPeerID(groupId));
     PeerId leader = groupLeaderCache.get(groupId);
     LOGGER.debug("Get local cached leader {} of group {}.", leader, groupId);
     return leader;

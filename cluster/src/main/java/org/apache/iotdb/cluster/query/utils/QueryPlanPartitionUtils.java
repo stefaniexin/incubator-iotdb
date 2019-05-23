@@ -91,9 +91,7 @@ public class QueryPlanPartitionUtils {
     List<Path> selectPaths = queryPlan.getPaths();
     for (Path path : selectPaths) {
       String groupId = QPExecutorUtils.getGroupIdByDevice(path.getDevice());
-      if (!selectGroupEntityMap.containsKey(groupId)) {
-        selectGroupEntityMap.put(groupId, new SelectSeriesGroupEntity(groupId));
-      }
+      selectGroupEntityMap.putIfAbsent(groupId, new SelectSeriesGroupEntity(groupId));
       selectGroupEntityMap.get(groupId).addSelectPaths(path);
     }
     for (SelectSeriesGroupEntity entity : selectGroupEntityMap.values()) {
@@ -236,9 +234,7 @@ public class QueryPlanPartitionUtils {
         .getSelectSeriesGroupEntityMap();
     for (Path path : selectPaths) {
       String groupId = QPExecutorUtils.getGroupIdByDevice(path.getDevice());
-      if (!selectGroupEntityMap.containsKey(groupId)) {
-        selectGroupEntityMap.put(groupId, new SelectSeriesGroupEntity(groupId));
-      }
+      selectGroupEntityMap.putIfAbsent(groupId, new SelectSeriesGroupEntity(groupId));
       selectGroupEntityMap.get(groupId).addSelectPaths(path);
     }
     for (SelectSeriesGroupEntity entity : selectGroupEntityMap.values()) {
