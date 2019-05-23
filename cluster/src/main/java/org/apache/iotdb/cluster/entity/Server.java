@@ -23,7 +23,7 @@ import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.rpc.RaftRpcServerFactory;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.iotdb.cluster.concurrent.pool.QPTaskManager;
+import org.apache.iotdb.cluster.concurrent.pool.QPTaskThreadManager;
 import org.apache.iotdb.cluster.config.ClusterConfig;
 import org.apache.iotdb.cluster.config.ClusterConstant;
 import org.apache.iotdb.cluster.config.ClusterDescriptor;
@@ -181,7 +181,7 @@ public class Server {
   }
 
   public void stop() throws ProcessorException, RaftConnectionException, FileNodeManagerException {
-    QPTaskManager.getInstance().close(true, ClusterConstant.CLOSE_THREAD_POOL_BLOCK_TIMEOUT);
+    QPTaskThreadManager.getInstance().close(true, ClusterConstant.CLOSE_THREAD_POOL_BLOCK_TIMEOUT);
     ClusterRpcQueryManager.getInstance().close();
     ClusterLocalQueryManager.getInstance().close();
     CLIENT_MANAGER.shutdown();

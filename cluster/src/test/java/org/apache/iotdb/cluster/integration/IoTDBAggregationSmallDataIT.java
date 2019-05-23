@@ -78,20 +78,11 @@ public class IoTDBAggregationSmallDataIT {
       "CREATE TIMESERIES root.vehicle.d0.s4 WITH DATATYPE=BOOLEAN, ENCODING=PLAIN"};
   private static String[] insertSqls = new String[]{
 
-      "insert into root.vehicle.d0(timestamp,s0) values(1,101)",
-      "insert into root.vehicle.d0(timestamp,s0) values(2,198)",
-      "insert into root.vehicle.d0(timestamp,s0) values(100,99)",
-      "insert into root.vehicle.d0(timestamp,s0) values(101,99)",
-      "insert into root.vehicle.d0(timestamp,s0) values(102,80)",
-      "insert into root.vehicle.d0(timestamp,s0) values(103,99)",
       "insert into root.vehicle.d0(timestamp,s0) values(104,90)",
       "insert into root.vehicle.d0(timestamp,s0) values(105,99)",
       "insert into root.vehicle.d0(timestamp,s0) values(106,99)",
-      "insert into root.vehicle.d0(timestamp,s0) values(2,10000)",
-      "insert into root.vehicle.d0(timestamp,s0) values(50,10000)",
       "insert into root.vehicle.d0(timestamp,s0) values(1000,22222)",
       "insert into root.vehicle.d0(timestamp,s0) values(106,199)",
-      "DELETE FROM root.vehicle.d0.s0 WHERE time < 104",
 
       "insert into root.vehicle.d0(timestamp,s1) values(1,1101)",
       "insert into root.vehicle.d0(timestamp,s1) values(2,198)",

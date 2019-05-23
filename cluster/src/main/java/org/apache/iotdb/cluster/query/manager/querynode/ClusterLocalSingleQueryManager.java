@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
-import org.apache.iotdb.cluster.concurrent.pool.QueryTimerManager;
+import org.apache.iotdb.cluster.concurrent.pool.QueryTimerThreadManager;
 import org.apache.iotdb.cluster.config.ClusterConstant;
 import org.apache.iotdb.cluster.query.PathType;
 import org.apache.iotdb.cluster.query.factory.ClusterSeriesReaderFactory;
@@ -132,7 +132,7 @@ public class ClusterLocalSingleQueryManager implements IClusterLocalSingleQueryM
    */
   public ClusterLocalSingleQueryManager(long jobId) {
     this.jobId = jobId;
-    queryTimer = QueryTimerManager.getInstance()
+    queryTimer = QueryTimerThreadManager.getInstance()
         .execute(new QueryTimerRunnable(), ClusterConstant.QUERY_TIMEOUT_IN_QUERY_NODE);
   }
 
@@ -431,7 +431,7 @@ public class ClusterLocalSingleQueryManager implements IClusterLocalSingleQueryM
   @Override
   public void resetQueryTimer() {
     queryTimer.cancel(false);
-    queryTimer = QueryTimerManager.getInstance()
+    queryTimer = QueryTimerThreadManager.getInstance()
         .execute(new QueryTimerRunnable(), ClusterConstant.QUERY_TIMEOUT_IN_QUERY_NODE);
   }
 
