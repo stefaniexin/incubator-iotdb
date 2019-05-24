@@ -484,56 +484,58 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
 
   @Override
   public TSExecuteStatementResp executeStatement(TSExecuteStatementReq req) throws TException {
-    long start = System.currentTimeMillis();
-    try {
-      if (!checkLogin()) {
-        LOGGER.info(INFO_NOT_LOGIN, IoTDBConstant.GLOBAL_DB_NAME);
-        return getTSExecuteStatementResp(TS_StatusCode.ERROR_STATUS, ERROR_NOT_LOGIN);
-      }
-      String statement = req.getStatement();
-
-      try {
-        if (execAdminCommand(statement)) {
-          return getTSExecuteStatementResp(TS_StatusCode.SUCCESS_STATUS, "ADMIN_COMMAND_SUCCESS");
-        }
-      } catch (Exception e) {
-        LOGGER.error("meet error while executing admin command!", e);
-        return getTSExecuteStatementResp(TS_StatusCode.ERROR_STATUS, e.getMessage());
-      }
-
-      try {
-        if (execSetConsistencyLevel(statement)) {
-          return getTSExecuteStatementResp(TS_StatusCode.SUCCESS_STATUS,
-              "Execute set consistency level successfully");
-        }
-      } catch (Exception e) {
-        return getTSExecuteStatementResp(TS_StatusCode.ERROR_STATUS, e.getMessage());
-      }
-
-      PhysicalPlan physicalPlan;
-      try {
-        physicalPlan = processor.parseSQLToPhysicalPlan(statement, zoneIds.get());
-        physicalPlan.setProposer(username.get());
-      } catch (IllegalASTFormatException e) {
-        LOGGER.debug("meet error while parsing SQL to physical plan: {}", e.getMessage());
-        return getTSExecuteStatementResp(TS_StatusCode.ERROR_STATUS,
-            "Statement format is not right:" + e.getMessage());
-      } catch (NullPointerException e) {
-        LOGGER.error("meet error while parsing SQL to physical plan.", e);
-        return getTSExecuteStatementResp(TS_StatusCode.ERROR_STATUS, "Statement is not allowed");
-      }
-      if (physicalPlan.isQuery()) {
-        return executeQueryStatement(req);
-      } else {
-        long elapse = System.currentTimeMillis() - start;
-        LOGGER.info("executeStatement() start to executeUpdateStatement() cost ,{}, ms", elapse);
-        return executeUpdateStatement(physicalPlan);
-      }
-    } catch (Exception e) {
-      LOGGER.info("meet error: {}  while executing statement: {}", e.getMessage(),
-          req.getStatement());
-      return getTSExecuteStatementResp(TS_StatusCode.ERROR_STATUS, e.getMessage());
-    }
+    return getTSExecuteStatementResp(TS_StatusCode.SUCCESS_STATUS,
+        "Execute set consistency level successfully");
+//    long start = System.currentTimeMillis();
+//    try {
+//      if (!checkLogin()) {
+//        LOGGER.info(INFO_NOT_LOGIN, IoTDBConstant.GLOBAL_DB_NAME);
+//        return getTSExecuteStatementResp(TS_StatusCode.ERROR_STATUS, ERROR_NOT_LOGIN);
+//      }
+//      String statement = req.getStatement();
+//
+//      try {
+//        if (execAdminCommand(statement)) {
+//          return getTSExecuteStatementResp(TS_StatusCode.SUCCESS_STATUS, "ADMIN_COMMAND_SUCCESS");
+//        }
+//      } catch (Exception e) {
+//        LOGGER.error("meet error while executing admin command!", e);
+//        return getTSExecuteStatementResp(TS_StatusCode.ERROR_STATUS, e.getMessage());
+//      }
+//
+//      try {
+//        if (execSetConsistencyLevel(statement)) {
+//          return getTSExecuteStatementResp(TS_StatusCode.SUCCESS_STATUS,
+//              "Execute set consistency level successfully");
+//        }
+//      } catch (Exception e) {
+//        return getTSExecuteStatementResp(TS_StatusCode.ERROR_STATUS, e.getMessage());
+//      }
+//
+//      PhysicalPlan physicalPlan;
+//      try {
+//        physicalPlan = processor.parseSQLToPhysicalPlan(statement, zoneIds.get());
+//        physicalPlan.setProposer(username.get());
+//      } catch (IllegalASTFormatException e) {
+//        LOGGER.debug("meet error while parsing SQL to physical plan: {}", e.getMessage());
+//        return getTSExecuteStatementResp(TS_StatusCode.ERROR_STATUS,
+//            "Statement format is not right:" + e.getMessage());
+//      } catch (NullPointerException e) {
+//        LOGGER.error("meet error while parsing SQL to physical plan.", e);
+//        return getTSExecuteStatementResp(TS_StatusCode.ERROR_STATUS, "Statement is not allowed");
+//      }
+//      if (physicalPlan.isQuery()) {
+//        return executeQueryStatement(req);
+//      } else {
+//        long elapse = System.currentTimeMillis() - start;
+//        LOGGER.info("executeStatement() start to executeUpdateStatement() cost ,{}, ms", elapse);
+//        return executeUpdateStatement(physicalPlan);
+//      }
+//    } catch (Exception e) {
+//      LOGGER.info("meet error: {}  while executing statement: {}", e.getMessage(),
+//          req.getStatement());
+//      return getTSExecuteStatementResp(TS_StatusCode.ERROR_STATUS, e.getMessage());
+//    }
   }
 
   /**
