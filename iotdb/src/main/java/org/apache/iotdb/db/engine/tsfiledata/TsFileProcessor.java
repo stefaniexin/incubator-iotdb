@@ -58,6 +58,7 @@ import org.apache.iotdb.db.engine.querycontext.ReadOnlyMemChunk;
 import org.apache.iotdb.db.engine.querycontext.SeriesDataSource;
 import org.apache.iotdb.db.engine.querycontext.UnsealedTsFile;
 import org.apache.iotdb.db.engine.sgmanager.OperationResult;
+import org.apache.iotdb.db.engine.sgmanager.StorageGroupProcessor;
 import org.apache.iotdb.db.engine.version.VersionController;
 import org.apache.iotdb.db.exception.FileNodeProcessorException;
 import org.apache.iotdb.db.exception.TsFileProcessorException;
@@ -189,7 +190,6 @@ public class TsFileProcessor extends Processor {
   @SuppressWarnings({"ResultOfMethodCallIgnored"})
   private void initResources() throws TsFileProcessorException {
     tsFileResources = new ArrayList<>();
-    inverseIndexOfResource = new HashMap<>();
     lastFlushedTimeForEachDevice = new HashMap<>();
     minWrittenTimeForEachDeviceInCurrentFile = new HashMap<>();
     maxWrittenTimeForEachDeviceInCurrentFile = new HashMap<>();
@@ -227,7 +227,7 @@ public class TsFileProcessor extends Processor {
     if (unclosedFile == null) {
       unclosedFile = generateNewTsFilePath();
     }
-
+    buildInverseIndex();
     initCurrentTsFile(unclosedFile);
   }
 
@@ -244,6 +244,12 @@ public class TsFileProcessor extends Processor {
         .parseLong(x.getName().split(FileNodeConstants.BUFFERWRITE_FILE_SEPARATOR)[0])));
 
     for (File tsfile : tsFiles) {
+      if (tsfile.getName().endsWith(StorageGroupProcessor.MERGE_TEMP_SUFFIX)) {
+        // remove temp file of last failed merge
+        //noinspection ResultOfMethodCallIgnored
+        tsfile.delete();
+        continue;
+      }
       if (!tsfile.getName().equals(unclosedFileName)) {
         addResource(tsfile);
       }
@@ -267,9 +273,17 @@ public class TsFileProcessor extends Processor {
     tsFileResources.add(resource);
     //maintain the inverse index and fileNamePrefix
     for (String device : resource.getDevices()) {
-      inverseIndexOfResource.computeIfAbsent(device, k -> new ArrayList<>()).add(resource);
       lastFlushedTimeForEachDevice
           .merge(device, resource.getEndTime(device), (x, y) -> x > y ? x : y);
+    }
+  }
+
+  public void buildInverseIndex() {
+    inverseIndexOfResource.clear();
+    for (TsFileResource resource : tsFileResources) {
+      for (String device : resource.getDevices()) {
+        inverseIndexOfResource.computeIfAbsent(device, k -> new ArrayList<>()).add(resource);
+      }
     }
   }
 
@@ -949,5 +963,31 @@ public class TsFileProcessor extends Processor {
 
   public List<TsFileResource> getTsFileResources() {
     return tsFileResources;
+  }
+
+  /**
+   * Merge method, replaces 'oldFiles' in tsfileResources with 'newFile'. If 'newFile' is null, just
+   * remove oldFiles.
+   * @param oldFiles
+   * @param newFile
+   */
+  public void replaceFiles(List<TsFileResource> oldFiles, TsFileResource newFile) {
+    List<TsFileResource> newFiles = new ArrayList<>();
+    int j = 0;
+    for (TsFileResource origin : tsFileResources) {
+      TsFileResource toDelete = j < oldFiles.size() ? oldFiles.get(j) : null;
+      if (origin == toDelete) {
+        if (j == 0 && newFile != null) {
+          // replace the first old file with the new file
+          newFiles.add(newFile);
+        }
+        // this file should be deleted, do not add it to new files
+        j++;
+      } else {
+        // this file is not one of the new files, keep it
+        newFiles.add(origin);
+      }
+    }
+    tsFileResources = newFiles;
   }
 }
