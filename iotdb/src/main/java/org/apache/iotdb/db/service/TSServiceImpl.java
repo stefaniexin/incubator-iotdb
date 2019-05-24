@@ -484,6 +484,7 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
 
   @Override
   public TSExecuteStatementResp executeStatement(TSExecuteStatementReq req) throws TException {
+    long start = System.currentTimeMillis();
     try {
       if (!checkLogin()) {
         LOGGER.info(INFO_NOT_LOGIN, IoTDBConstant.GLOBAL_DB_NAME);
@@ -524,6 +525,8 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
       if (physicalPlan.isQuery()) {
         return executeQueryStatement(req);
       } else {
+        long elapse = System.currentTimeMillis() - start;
+        LOGGER.info("executeStatement() start to executeUpdateStatement() cost ,{}, ms", elapse);
         return executeUpdateStatement(physicalPlan);
       }
     } catch (Exception e) {
@@ -737,6 +740,7 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
   }
 
   private TSExecuteStatementResp executeUpdateStatement(PhysicalPlan plan) {
+    long start = System.currentTimeMillis();
     List<Path> paths = plan.getPaths();
 
     try {
@@ -768,6 +772,8 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
     TSOperationHandle operationHandle;
     operationHandle = new TSOperationHandle(operationId, false);
     resp.setOperationHandle(operationHandle);
+    long elapse = System.currentTimeMillis() - start;
+    LOGGER.info("executeUpdateStatement(PhysicalPlan) cost ,{}, ms", elapse);
     return resp;
   }
 
