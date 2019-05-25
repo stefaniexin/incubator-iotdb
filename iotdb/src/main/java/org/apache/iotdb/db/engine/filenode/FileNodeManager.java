@@ -21,6 +21,7 @@ package org.apache.iotdb.db.engine.filenode;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -67,6 +68,7 @@ import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSEncoding;
 import org.apache.iotdb.tsfile.read.common.Path;
 import org.apache.iotdb.tsfile.read.expression.impl.SingleSeriesExpression;
+import org.apache.iotdb.tsfile.utils.Pair;
 import org.apache.iotdb.tsfile.write.record.TSRecord;
 import org.apache.iotdb.tsfile.write.record.datapoint.DataPoint;
 import org.slf4j.Logger;
@@ -317,6 +319,40 @@ public class FileNodeManager implements IStatistic, IService {
     }
     return insertType;
   }
+
+  /**
+   *
+   * @param tsRecords
+   * @param partialResult
+   * @param message
+   * @param isMonitor
+   * @return
+   */
+  public Pair<List<Integer>, String> insertBatch(TSRecord[] tsRecords, List<Integer> partialResult,
+      String message, boolean isMonitor) {
+    Map<String, List<Integer>> fileNode2RecordIndexes = new HashMap<>();
+    Map<String, List<TSRecord>> fileNode2Records = new HashMap<>();
+    for (int i = 0; i < tsRecords.length; i++) {
+      if (partialResult.get(i) == Statement.EXECUTE_FAILED) {
+        continue;
+      }
+      TSRecord record = tsRecords[i];
+      try {
+        checkTimestamp(record);
+        updateStat(isMonitor, record);
+        String fileNode = MManager.getInstance().getFileNameByPath(record.deviceId);
+        fileNode2RecordIndexes.computeIfAbsent(fileNode, f -> new ArrayList<>()).add(i);
+        fileNode2Records.computeIfAbsent(fileNode, f -> new ArrayList<>()).add(record);
+      } catch (Exception e) {
+        e.printStackTrace();
+        partialResult.set(i, Statement.EXECUTE_FAILED);
+        message = e.getMessage();
+      }
+    }
+
+    return null;
+  }
+
 
   private void writeLog(TSRecord tsRecord, boolean isMonitor, WriteLogNode logNode)
       throws FileNodeManagerException {

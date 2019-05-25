@@ -110,6 +110,12 @@ public class MemIntQpExecutor extends QueryProcessExecutor {
   }
 
   @Override
+  public Pair<List<Integer>, String> processBatchInsert(InsertPlan[] insertPlans,
+      List<Integer> partialResult, String message) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public QueryDataSet aggregate(List<Path> paths, List<String> aggres, IExpression expression,
       QueryContext context)
       throws ProcessorException, IOException, PathErrorException, FileNodeManagerException,

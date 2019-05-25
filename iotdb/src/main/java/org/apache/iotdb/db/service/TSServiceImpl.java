@@ -459,7 +459,8 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
       }
 
       if (allInsert) {
-        Pair<List<Integer>, String> pair = executeBatchInsert(physicalPlans);
+        // execute batch insert
+        Pair<List<Integer>, String> pair = executeBatchInsert((InsertPlan[])physicalPlans);
         result = pair.left;
         // only used when having failure
         batchErrorMessage = pair.right;
@@ -467,6 +468,7 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
             isAllSuccessful = false;
         }
       } else {
+        // execute one by one
         for (int i = 0; i < physicalPlans.length; i++) {
           PhysicalPlan physicalPlan = physicalPlans[i];
           try {
@@ -507,17 +509,31 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
   }
 
   /**
-   * @param physicalPlans
+   * @param insertPlans
    * @return a list of return code and message
    */
-  private Pair<List<Integer>, String> executeBatchInsert(PhysicalPlan[] physicalPlans) {
-    List<Integer> results = new ArrayList<>();
+  private Pair<List<Integer>, String> executeBatchInsert(InsertPlan[] insertPlans) {
+    List<Integer> results = new ArrayList<>(insertPlans.length);
 
     // null means all success
     String message = null;
 
+    for (int i = 0; i < insertPlans.length; i++) {
+      PhysicalPlan physicalPlan = insertPlans[i];
+      List<Path> paths = physicalPlan.getPaths();
+      try {
+        if (!checkAuthorization(paths, physicalPlan)) {
+          results.set(i, Statement.EXECUTE_FAILED);
+          message = "No permissions for this operation " + physicalPlan.getOperatorType();
+        }
+      } catch (AuthException e) {
+        LOGGER.error("meet error while checking authorization.", e);
+        results.set(i, Statement.EXECUTE_FAILED);
+        message = "Uninitialized authorizer " + e.getMessage();
+      }
+    }
 
-    return new Pair<>(results, message);
+    return processor.getExecutor().processBatchInsert(insertPlans, results, message);
   }
 
 
@@ -793,7 +809,7 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
     // Do we need to add extra information of executive condition
     boolean execRet;
     try {
-      execRet = executeNonQuery(plan);
+      execRet = processor.getExecutor().processNonQuery(plan);
     } catch (ProcessorException e) {
       LOGGER.debug("meet error while processing non-query. {}", e.getMessage());
       return getTSExecuteStatementResp(TS_StatusCode.ERROR_STATUS, e.getMessage());
@@ -808,10 +824,6 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
     operationHandle = new TSOperationHandle(operationId, false);
     resp.setOperationHandle(operationHandle);
     return resp;
-  }
-
-  protected boolean executeNonQuery(PhysicalPlan plan) throws ProcessorException {
-    return processor.getExecutor().processNonQuery(plan);
   }
 
   private TSExecuteStatementResp executeUpdateStatement(String statement)

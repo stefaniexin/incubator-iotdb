@@ -19,6 +19,7 @@
 package org.apache.iotdb.db.qp.executor;
 
 import java.io.IOException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -159,6 +160,59 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
         throw new UnsupportedOperationException(
             String.format("operation %s does not support", plan.getOperatorType()));
     }
+  }
+
+  @Override
+  public Pair<List<Integer>, String> processBatchInsert(InsertPlan[] insertPlans,
+      List<Integer> partialResult, String message) {
+    String msg = message;
+    TSRecord[] tsRecords = new TSRecord[insertPlans.length];
+
+    for (int i = 0; i < insertPlans.length; i++) {
+      // skip the bad plan
+      if (partialResult.get(i) == Statement.EXECUTE_FAILED) {
+        continue;
+      }
+      try {
+        boolean hasError = false;
+        InsertPlan insertPlan = insertPlans[i];
+        String deviceId = insertPlan.getDeviceId();
+        String[] measurementList = insertPlan.getMeasurements();
+        TSRecord tsRecord = new TSRecord(insertPlan.getTime(), deviceId);
+        MNode node = mManager.getNodeByDeviceIdFromCache(deviceId);
+        for (int j = 0; j < measurementList.length; j++) {
+          if (!node.hasChild(measurementList[j])) {
+            partialResult.set(i, Statement.EXECUTE_FAILED);
+            msg = String.format("Current deviceId[%s] does not contains measurement:%s",
+                deviceId, measurementList[j]);
+            hasError = true;
+            break;
+          }
+          MNode measurementNode = node.getChild(measurementList[j]);
+          if (!measurementNode.isLeaf()) {
+            partialResult.set(i, Statement.EXECUTE_FAILED);
+            msg = String.format("Current Path is not leaf node. %s.%s", deviceId,
+                measurementList[j]);
+            hasError = true;
+            break;
+          }
+
+          TSDataType dataType = measurementNode.getSchema().getType();
+          String value = insertPlan.getValues()[j];
+          value = checkValue(dataType, value);
+          DataPoint dataPoint = DataPoint.getDataPoint(dataType, measurementList[i], value);
+          tsRecord.addTuple(dataPoint);
+        }
+        if (!hasError) {
+          tsRecords[i] = tsRecord;
+        }
+      } catch (Exception e) {
+        partialResult.set(i, Statement.EXECUTE_FAILED);
+        msg = e.getMessage();
+      }
+
+    }
+    return fileNodeManager.insertBatch(tsRecords, partialResult, msg, false);
   }
 
   @Override

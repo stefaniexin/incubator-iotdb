@@ -25,6 +25,7 @@ import org.apache.iotdb.db.exception.FileNodeManagerException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.ProcessorException;
 import org.apache.iotdb.db.qp.physical.PhysicalPlan;
+import org.apache.iotdb.db.qp.physical.crud.InsertPlan;
 import org.apache.iotdb.db.qp.physical.crud.QueryPlan;
 import org.apache.iotdb.db.query.context.QueryContext;
 import org.apache.iotdb.db.query.fill.IFill;
@@ -44,6 +45,18 @@ public interface IQueryProcessExecutor {
    * @param plan Physical Non-Query Plan
    */
   boolean processNonQuery(PhysicalPlan plan) throws ProcessorException;
+
+
+  /**
+   * process a batch insert plan, we group the insert plans by storage group (FileNode).
+   * Then, for each storage group, we execute a batch of insertions.
+   *
+   * @param insertPlans InsertPlans
+   * @param partialResult the unauthorized plan is marked as Statement.EXECUTE_FAILED
+   * @param message error message that already get
+   * @return result of each statement with
+   */
+  Pair<List<Integer>, String> processBatchInsert(InsertPlan[] insertPlans, List<Integer> partialResult, String message);
 
   /**
    * process query plan of qp layer, construct queryDataSet.
