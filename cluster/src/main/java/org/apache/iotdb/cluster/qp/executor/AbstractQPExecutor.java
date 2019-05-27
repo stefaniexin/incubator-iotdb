@@ -158,7 +158,7 @@ public abstract class AbstractQPExecutor {
         throw new RaftConnectionException(
             String.format("Can not connect to remote node : %s", task.getTargetNode()));
       } else if (task.getTaskState() == TaskState.REDIRECT) {
-        /** redirect to the right leader **/
+        // redirect to the right leader
         leader = PeerId.parsePeer(task.getResponse().getLeaderStr());
         LOGGER.debug("Redirect leader: {}, group id = {}", leader, task.getRequest().getGroupID());
         RaftUtils.updateRaftGroupLeader(task.getRequest().getGroupID(), leader);

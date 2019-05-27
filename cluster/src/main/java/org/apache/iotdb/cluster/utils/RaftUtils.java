@@ -418,7 +418,7 @@ public class RaftUtils {
     handleNullReadToDataGroup(status, server, nullReadTask, groupId);
   }
 
-  private static void handleNullReadToDataGroup(Status status, Server server,
+  private static void handleNullReadToDataGroup(Status resultStatus, Server server,
       SingleQPTask nullReadTask, String groupId) {
     try {
       LOGGER.debug("Handle null-read in data group for reading.");
@@ -432,16 +432,16 @@ public class RaftUtils {
               BasicResponse response = DataGroupNonQueryResponse
                   .createEmptyResponse(groupId);
               if (!status.isOk()) {
-                status.setCode(-1);
-                status.setErrorMsg(status.getErrorMsg());
+                resultStatus.setCode(-1);
+                resultStatus.setErrorMsg(status.getErrorMsg());
               }
               nullReadTask.receive(response);
             }
           });
       nullReadTask.await();
     } catch (InterruptedException e) {
-      status.setCode(-1);
-      status.setErrorMsg(e.getMessage());
+      resultStatus.setCode(-1);
+      resultStatus.setErrorMsg(e.getMessage());
     }
   }
 
