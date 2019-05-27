@@ -22,6 +22,7 @@ import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.closure.ReadIndexClosure;
 import com.alipay.sofa.jraft.entity.PeerId;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -31,6 +32,7 @@ import org.apache.iotdb.cluster.config.ClusterConstant;
 import org.apache.iotdb.cluster.entity.raft.MetadataRaftHolder;
 import org.apache.iotdb.cluster.entity.raft.RaftService;
 import org.apache.iotdb.cluster.exception.RaftConnectionException;
+import org.apache.iotdb.cluster.qp.task.BatchQPTask;
 import org.apache.iotdb.cluster.qp.task.QPTask.TaskState;
 import org.apache.iotdb.cluster.qp.task.SingleQPTask;
 import org.apache.iotdb.cluster.rpc.raft.request.querymetadata.QueryMetadataInStringRequest;
@@ -46,6 +48,7 @@ import org.apache.iotdb.cluster.rpc.raft.response.querymetadata.QueryPathsRespon
 import org.apache.iotdb.cluster.rpc.raft.response.querymetadata.QuerySeriesTypeResponse;
 import org.apache.iotdb.cluster.rpc.raft.response.querymetadata.QueryStorageGroupResponse;
 import org.apache.iotdb.cluster.rpc.raft.response.querymetadata.QueryTimeSeriesResponse;
+import org.apache.iotdb.cluster.service.TSServiceClusterImpl.BatchResult;
 import org.apache.iotdb.cluster.utils.QPExecutorUtils;
 import org.apache.iotdb.cluster.utils.RaftUtils;
 import org.apache.iotdb.db.exception.PathErrorException;
@@ -145,37 +148,17 @@ public class QueryMetadataExecutor extends AbstractQPExecutor {
     try {
       LOGGER.debug("Send show timeseries {} task for group {} to node {}.", pathList, groupId,
           holder);
-      res.addAll(queryTimeSeries(task));
+      res.addAll(queryTimeSeries(task, pathList, groupId));
     } catch (RaftConnectionException e) {
-      boolean success = false;
-      while (!success) {
-        PeerId nextNode = null;
-        try {
-          nextNode = RaftUtils.getPeerIDInOrder(groupId);
-          if (holder.equals(nextNode)) {
-            break;
-          }
-          LOGGER.debug(
-              "Previous task fail, then send show timeseries {} task for group {} to node {}.",
-              pathList, groupId, nextNode);
-          task.resetTask();
-          task.setTargetNode(holder);
-          task.setTaskState(TaskState.INITIAL);
-          res.addAll(queryTimeSeries(task));
-          LOGGER
-              .debug("Show timeseries {} task for group {} to node {} succeed.", pathList, groupId,
-                  nextNode);
-          success = true;
-        } catch (RaftConnectionException e1) {
-          LOGGER.debug("Show timeseries {} task for group {} to node {} fail.", pathList, groupId,
-              nextNode);
-        }
-      }
-      LOGGER.debug("The final result for show timeseries {} task is {}", pathList, success);
-      if (!success) {
-        throw new ProcessorException(RAFT_CONNECTION_ERROR, e);
-      }
+      throw new ProcessorException(RAFT_CONNECTION_ERROR, e);
     }
+  }
+
+  private List<List<String>> queryTimeSeries(SingleQPTask task, List<String> pathList, String groupId)
+      throws InterruptedException, RaftConnectionException {
+    BasicResponse response = syncHandleSingleTaskGetRes(task, 0, "show timeseries " + pathList, groupId);
+    return response == null ? new ArrayList<>()
+        : ((QueryTimeSeriesResponse) response).getTimeSeries();
   }
 
   public String processMetadataInStringQuery()
@@ -183,12 +166,16 @@ public class QueryMetadataExecutor extends AbstractQPExecutor {
     Set<String> groupIdSet = router.getAllGroupId();
 
     List<String> metadataList = new ArrayList<>(groupIdSet.size());
-    List<SingleQPTask> taskList = new ArrayList<>();
+
+    BatchResult batchResult = new BatchResult(true, new StringBuilder(), new int[groupIdSet.size()]);
+    Map<String, List<Integer>> planIndexMap = new HashMap<>();
+    Map<String, SingleQPTask> subTaskMap = new HashMap<>();
+
+    int index = 0;
     for (String groupId : groupIdSet) {
       QueryMetadataInStringRequest request = new QueryMetadataInStringRequest(groupId,
           getReadMetadataConsistencyLevel());
       SingleQPTask task = new SingleQPTask(false, request);
-      taskList.add(task);
 
       LOGGER.debug("Execute show metadata in string statement for group {}.", groupId);
       PeerId holder;
@@ -202,43 +189,17 @@ public class QueryMetadataExecutor extends AbstractQPExecutor {
         holder = RaftUtils.getPeerIDInOrder(groupId);
       }
       task.setTargetNode(holder);
-      try {
-        LOGGER.debug("Send show metadata in string task for group {} to node {}.", groupId, holder);
-        asyncSendNonQuerySingleTask(task, 0);
-      } catch (RaftConnectionException e) {
-        boolean success = false;
-        while (!success) {
-          PeerId nextNode = null;
-          try {
-            nextNode = RaftUtils.getPeerIDInOrder(groupId);
-            if (holder.equals(nextNode)) {
-              break;
-            }
-            LOGGER.debug(
-                "Previous task fail, then send show metadata in string task for group {} to node {}.",
-                groupId, nextNode);
-            task.resetTask();
-            task.setTargetNode(nextNode);
-            task.setTaskState(TaskState.INITIAL);
-            asyncSendNonQuerySingleTask(task, 0);
-            LOGGER.debug("Show metadata in string task for group {} to node {} succeed.", groupId,
-                nextNode);
-            success = true;
-          } catch (RaftConnectionException e1) {
-            LOGGER.debug("Show metadata in string task for group {} to node {} fail.", groupId,
-                nextNode);
-          }
-        }
-        LOGGER.debug("The final result for show metadata in string task is {}", success);
-        if (!success) {
-          throw new ProcessorException(RAFT_CONNECTION_ERROR, e);
-        }
-      }
+      subTaskMap.put(groupId, task);
+      planIndexMap.computeIfAbsent(groupId, l -> new ArrayList<>()).add(index++);
     }
-    for (int i = 0; i < taskList.size(); i++) {
-      SingleQPTask task = taskList.get(i);
-      task.await();
-      BasicResponse response = task.getResponse();
+
+    BatchQPTask batchTask = new BatchQPTask(subTaskMap.size(), batchResult, subTaskMap, planIndexMap);
+    currentTask.set(batchTask);
+    batchTask.executeQueryMetadataBy(this, "show metadata in string");
+    batchTask.await();
+
+    for (SingleQPTask subTask : subTaskMap.values()) {
+      BasicResponse response = subTask.getResponse();
       if (response == null || !response.isSuccess()) {
         String errorMessage = "response is null";
         if (response != null && response.getErrorMsg() != null) {
@@ -278,7 +239,7 @@ public class QueryMetadataExecutor extends AbstractQPExecutor {
       task.setTargetNode(holder);
       try {
         LOGGER.debug("Send query metadata task for group {} to node {}.", groupId, holder);
-        asyncSendNonQuerySingleTask(task, 0);
+        asyncSendSingleTask(task, 0);
       } catch (RaftConnectionException e) {
         boolean success = false;
         while (!success) {
@@ -294,7 +255,7 @@ public class QueryMetadataExecutor extends AbstractQPExecutor {
             task.resetTask();
             task.setTargetNode(nextNode);
             task.setTaskState(TaskState.INITIAL);
-            asyncSendNonQuerySingleTask(task, 0);
+            asyncSendSingleTask(task, 0);
             LOGGER.debug("Query metadata task for group {} to node {} succeed.", groupId, nextNode);
             success = true;
           } catch (RaftConnectionException e1) {
@@ -352,39 +313,19 @@ public class QueryMetadataExecutor extends AbstractQPExecutor {
       try {
         LOGGER.debug("Send get series type for {} task for group {} to node {}.", path, groupId,
             holder);
-        dataType = querySeriesType(task);
+        dataType = querySeriesType(task, path, groupId);
       } catch (RaftConnectionException e) {
-        boolean success = false;
-        while (!success) {
-          PeerId nextNode = null;
-          try {
-            nextNode = RaftUtils.getPeerIDInOrder(groupId);
-            if (holder.equals(nextNode)) {
-              break;
-            }
-            LOGGER.debug(
-                "Previous task fail, then send get series type for {} task for group {} to node {}.",
-                path, groupId, nextNode);
-            task.resetTask();
-            task.setTargetNode(nextNode);
-            task.setTaskState(TaskState.INITIAL);
-            dataType = querySeriesType(task);
-            LOGGER.debug("Get series type for {} task for group {} to node {} succeed.", path,
-                groupId, nextNode);
-            success = true;
-          } catch (RaftConnectionException e1) {
-            LOGGER.debug("Get series type for {} task for group {} to node {} fail.", path, groupId,
-                nextNode);
-            continue;
-          }
-        }
-        LOGGER.debug("The final result for get series type for {} task is {}", path, success);
-        if (!success) {
-          throw new ProcessorException(RAFT_CONNECTION_ERROR, e);
-        }
+        throw new ProcessorException(RAFT_CONNECTION_ERROR, e);
       }
     }
     return dataType;
+  }
+
+  private TSDataType querySeriesType(SingleQPTask task, String path, String groupId)
+      throws InterruptedException, RaftConnectionException {
+    BasicResponse response = syncHandleSingleTaskGetRes(task, 0, "get series type for " + path, groupId);
+    return response == null ? null
+        : ((QuerySeriesTypeResponse) response).getDataType();
   }
 
   /**
@@ -433,50 +374,17 @@ public class QueryMetadataExecutor extends AbstractQPExecutor {
     try {
       LOGGER
           .debug("Send get paths for {} task for group {} to node {}.", pathList, groupId, holder);
-      res.addAll(queryPaths(task));
+      res.addAll(queryPaths(task, pathList, groupId));
     } catch (RaftConnectionException e) {
-      boolean success = false;
-      while (!success) {
-        PeerId nextNode = null;
-        try {
-          nextNode = RaftUtils.getPeerIDInOrder(groupId);
-          if (holder.equals(nextNode)) {
-            break;
-          }
-          LOGGER
-              .debug("Previous task fail, then send get paths for {} task for group {} to node {}.",
-                  pathList, groupId, nextNode);
-          task.setTargetNode(nextNode);
-          task.resetTask();
-          task.setTaskState(TaskState.INITIAL);
-          res.addAll(queryPaths(task));
-          LOGGER.debug("Get paths for {} task for group {} to node {} succeed.", pathList, groupId,
-              nextNode);
-          success = true;
-        } catch (RaftConnectionException e1) {
-          LOGGER.debug("Get paths for {} task for group {} to node {} fail.", pathList, groupId,
-              nextNode);
-        }
-      }
-      LOGGER.debug("The final result for get paths for {} task is {}", pathList, success);
-      if (!success) {
-        throw new ProcessorException(RAFT_CONNECTION_ERROR, e);
-      }
+      throw new ProcessorException(RAFT_CONNECTION_ERROR, e);
     }
   }
 
-  private List<List<String>> queryTimeSeries(SingleQPTask task)
+  private List<String> queryPaths(SingleQPTask task, List<String> pathList, String groupId)
       throws InterruptedException, RaftConnectionException {
-    BasicResponse response = syncHandleNonQuerySingleTaskGetRes(task, 0);
+    BasicResponse response = syncHandleSingleTaskGetRes(task, 0, "get paths for " + pathList, groupId);
     return response == null ? new ArrayList<>()
-        : ((QueryTimeSeriesResponse) response).getTimeSeries();
-  }
-
-  private TSDataType querySeriesType(SingleQPTask task)
-      throws InterruptedException, RaftConnectionException {
-    BasicResponse response = syncHandleNonQuerySingleTaskGetRes(task, 0);
-    return response == null ? null
-        : ((QuerySeriesTypeResponse) response).getDataType();
+        : ((QueryPathsResponse) response).getPaths();
   }
 
   /**
@@ -514,13 +422,6 @@ public class QueryMetadataExecutor extends AbstractQPExecutor {
     }
     task.await();
     return ((QueryStorageGroupResponse) task.getResponse()).getStorageGroups();
-  }
-
-  private List<String> queryPaths(SingleQPTask task)
-      throws InterruptedException, RaftConnectionException {
-    BasicResponse response = syncHandleNonQuerySingleTaskGetRes(task, 0);
-    return response == null ? new ArrayList<>()
-        : ((QueryPathsResponse) response).getPaths();
   }
 
   /**

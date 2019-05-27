@@ -28,7 +28,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantLock;
 import org.apache.iotdb.cluster.concurrent.pool.QPTaskThreadManager;
 import org.apache.iotdb.cluster.exception.RaftConnectionException;
+import org.apache.iotdb.cluster.qp.executor.AbstractQPExecutor;
 import org.apache.iotdb.cluster.qp.executor.NonQueryExecutor;
+import org.apache.iotdb.cluster.qp.executor.QueryMetadataExecutor;
 import org.apache.iotdb.cluster.rpc.raft.response.BasicResponse;
 import org.apache.iotdb.cluster.rpc.raft.response.nonquery.DataGroupNonQueryResponse;
 import org.apache.iotdb.cluster.service.TSServiceClusterImpl.BatchResult;
@@ -66,7 +68,7 @@ public class BatchQPTask extends MultiQPTask {
    */
   private ReentrantLock lock = new ReentrantLock();
 
-  private NonQueryExecutor executor;
+  private AbstractQPExecutor executor;
 
   public BatchQPTask(int taskNum, BatchResult result, Map<String, SingleQPTask> taskMap,
       Map<String, List<Integer>> planIndexMap) {
@@ -90,8 +92,6 @@ public class BatchQPTask extends MultiQPTask {
       String groupId = basicResponse.getGroupId();
       List<Boolean> results = basicResponse.getResults();
       List<Integer> indexList = planIndexMap.get(groupId);
-      List<String> errorMsgList = ((DataGroupNonQueryResponse) basicResponse).getErrorMsgList();
-      int errorMsgIndex = 0;
       for (int i = 0; i < indexList.size(); i++) {
         if (i >= results.size()) {
           resultArray[indexList.get(i)] = Statement.EXECUTE_FAILED;
@@ -101,17 +101,45 @@ public class BatchQPTask extends MultiQPTask {
             resultArray[indexList.get(i)] = Statement.SUCCESS_NO_INFO;
           } else {
             resultArray[indexList.get(i)] = Statement.EXECUTE_FAILED;
-            batchResult.addBatchErrorMessage(indexList.get(i), errorMsgList.get(errorMsgIndex++));
+            batchResult.addBatchErrorMessage(indexList.get(i), basicResponse.getErrorMsg());
           }
         }
       }
       if (!basicResponse.isSuccess()) {
         batchResult.setAllSuccessful(false);
       }
+    } catch (Exception ex) {
+      ex.printStackTrace();
     } finally {
       lock.unlock();
     }
     taskCountDownLatch.countDown();
+  }
+
+  public void executeQueryMetadataBy(QueryMetadataExecutor executor, String taskInfo) {
+    this.executor = executor;
+
+    for (Entry<String, SingleQPTask> entry : taskMap.entrySet()) {
+      String groupId = entry.getKey();
+      SingleQPTask subTask = entry.getValue();
+      Future<?> taskThread;
+      taskThread = QPTaskThreadManager.getInstance()
+          .submit(() -> executeRpcSubQueryMetadataTask(subTask, taskInfo, groupId));
+      taskThreadMap.put(groupId, taskThread);
+    }
+  }
+
+  /**
+   * Execute RPC sub task
+   */
+  private void executeRpcSubQueryMetadataTask(SingleQPTask subTask, String taskInfo, String groupId) {
+    try {
+      executor.syncHandleSingleTask(subTask, taskInfo, groupId);
+      this.receive(subTask.getResponse());
+    } catch (RaftConnectionException | InterruptedException e) {
+      LOGGER.error("Async handle sub {} task failed.", taskInfo);
+      this.receive(DataGroupNonQueryResponse.createErrorResponse(groupId, e.getMessage()));
+    }
   }
 
   public void executeBy(NonQueryExecutor executor) {
@@ -139,7 +167,7 @@ public class BatchQPTask extends MultiQPTask {
    */
   private void executeLocalSubTask(QPTask subTask, String groupId) {
     try {
-      executor.handleNonQueryRequestLocally(groupId, subTask);
+      ((NonQueryExecutor) executor).handleNonQueryRequestLocally(groupId, subTask);
       this.receive(subTask.getResponse());
     } catch (InterruptedException e) {
       LOGGER.error("Handle sub task locally failed.");
@@ -152,7 +180,7 @@ public class BatchQPTask extends MultiQPTask {
    */
   private void executeRpcSubTask(SingleQPTask subTask, String groupId) {
     try {
-      executor.syncHandleNonQueryTask(subTask);
+      executor.syncHandleSingleTask(subTask, "sub non-query", groupId);
       this.receive(subTask.getResponse());
     } catch (RaftConnectionException | InterruptedException e) {
       LOGGER.error("Async handle sub task failed.");

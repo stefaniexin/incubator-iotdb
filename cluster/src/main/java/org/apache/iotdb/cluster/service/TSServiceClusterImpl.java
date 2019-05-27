@@ -204,13 +204,13 @@ public class TSServiceClusterImpl extends TSServiceImpl {
   /**
    * Present batch results.
    */
-  public class BatchResult {
+  public static class BatchResult {
 
     private boolean isAllSuccessful;
     private StringBuilder batchErrorMessage;
     private int[] resultArray;
 
-    private BatchResult(boolean isAllSuccessful, StringBuilder batchErrorMessage,
+    public BatchResult(boolean isAllSuccessful, StringBuilder batchErrorMessage,
         int[] resultArray) {
       this.isAllSuccessful = isAllSuccessful;
       this.batchErrorMessage = batchErrorMessage;

@@ -37,7 +37,6 @@ import org.apache.iotdb.cluster.entity.raft.RaftService;
 import org.apache.iotdb.cluster.exception.RaftConnectionException;
 import org.apache.iotdb.cluster.qp.task.BatchQPTask;
 import org.apache.iotdb.cluster.qp.task.QPTask;
-import org.apache.iotdb.cluster.qp.task.QPTask.TaskState;
 import org.apache.iotdb.cluster.qp.task.SingleQPTask;
 import org.apache.iotdb.cluster.rpc.raft.request.BasicRequest;
 import org.apache.iotdb.cluster.rpc.raft.request.nonquery.DataGroupNonQueryRequest;
@@ -327,43 +326,8 @@ public class NonQueryExecutor extends AbstractQPExecutor {
       return handleNonQueryRequestLocally(groupId, qpTask);
     } else {
       PeerId leader = RaftUtils.getLocalLeaderPeerID(groupId);
-      boolean res = false;
       qpTask.setTargetNode(leader);
-      try {
-         res = syncHandleNonQueryTask(qpTask);
-      } catch (RaftConnectionException ex) {
-        boolean success = false;
-        PeerId nextNode = RaftUtils.getPeerIDInOrder(groupId);
-        PeerId firstNode = nextNode;
-        boolean first = true;
-        while (!success) {
-          try {
-            if (!first) {
-              nextNode = RaftUtils.getPeerIDInOrder(groupId);
-              if (firstNode.equals(nextNode)) {
-                break;
-              }
-            }
-            first = false;
-            LOGGER.debug("Previous task fail, then send non-query task for group {} to node {}.", groupId, nextNode);
-            qpTask.resetTask();
-            qpTask.setTargetNode(nextNode);
-            qpTask.setTaskState(TaskState.INITIAL);
-            currentTask.set(qpTask);
-            res = syncHandleNonQueryTask(qpTask);
-            LOGGER.debug("Non-query task for group {} to node {} succeed.", groupId, nextNode);
-            success = true;
-            RaftUtils.updateRaftGroupLeader(groupId, nextNode);
-          } catch (RaftConnectionException e1) {
-            LOGGER.debug("Non-query task for group {} to node {} fail.", groupId, nextNode);
-          }
-        }
-        LOGGER.debug("The final result for non-query task is {}", success);
-        if (!success) {
-          throw ex;
-        }
-      }
-      return res;
+      return syncHandleSingleTask(qpTask, "non-query", groupId);
     }
   }
 
@@ -387,17 +351,4 @@ public class NonQueryExecutor extends AbstractQPExecutor {
     /** Apply qpTask to Raft Node **/
     return RaftUtils.executeRaftTaskForLocalProcessor(service, qpTask, response);
   }
-
-  /**
-   * Async handle task by QPTask and leader id.
-   *
-   * @param task request QPTask
-   * @return request result
-   */
-  public boolean syncHandleNonQueryTask(SingleQPTask task)
-      throws RaftConnectionException, InterruptedException {
-    BasicResponse response = syncHandleNonQuerySingleTaskGetRes(task, 0);
-    return response != null && response.isSuccess();
-  }
-
 }
