@@ -216,31 +216,42 @@ public class RaftNodeAsClientManager {
 
     @Override
     public void asyncHandleRequest(SingleQPTask qpTask) {
+//      LOGGER.debug("Node as client to send request to leader: {}", qpTask.getTargetNode());
+//      try {
+//        boltClientService.getRpcClient()
+//            .invokeWithCallback(qpTask.getTargetNode().getEndpoint().toString(),
+//                qpTask.getRequest(),
+//                new InvokeCallback() {
+//
+//                  @Override
+//                  public void onResponse(Object result) {
+//                    BasicResponse response = (BasicResponse) result;
+//                    qpTask.receive(response);
+//                  }
+//
+//                  @Override
+//                  public void onException(Throwable e) {
+//                    LOGGER.error("Bolt rpc client occurs errors when handling Request", e);
+//                    qpTask.setTaskState(TaskState.EXCEPTION);
+//                    qpTask.receive(null);
+//                  }
+//
+//                  @Override
+//                  public Executor getExecutor() {
+//                    return null;
+//                  }
+//                }, TASK_TIMEOUT_MS);
+//      } catch (RemotingException | InterruptedException e) {
+//        LOGGER.error(e.getMessage());
+//        qpTask.setTaskState(TaskState.RAFT_CONNECTION_EXCEPTION);
+//        qpTask.receive(null);
+//      }
       LOGGER.debug("Node as client to send request to leader: {}", qpTask.getTargetNode());
       try {
-        boltClientService.getRpcClient()
-            .invokeWithCallback(qpTask.getTargetNode().getEndpoint().toString(),
-                qpTask.getRequest(),
-                new InvokeCallback() {
-
-                  @Override
-                  public void onResponse(Object result) {
-                    BasicResponse response = (BasicResponse) result;
-                    qpTask.receive(response);
-                  }
-
-                  @Override
-                  public void onException(Throwable e) {
-                    LOGGER.error("Bolt rpc client occurs errors when handling Request", e);
-                    qpTask.setTaskState(TaskState.EXCEPTION);
-                    qpTask.receive(null);
-                  }
-
-                  @Override
-                  public Executor getExecutor() {
-                    return null;
-                  }
-                }, TASK_TIMEOUT_MS);
+        BasicResponse response = (BasicResponse) boltClientService.getRpcClient()
+            .invokeSync(qpTask.getTargetNode().getEndpoint().toString(),
+                qpTask.getRequest(), TASK_TIMEOUT_MS);
+        qpTask.receive(response);
       } catch (RemotingException | InterruptedException e) {
         LOGGER.error(e.getMessage());
         qpTask.setTaskState(TaskState.RAFT_CONNECTION_EXCEPTION);
