@@ -444,33 +444,33 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
       boolean isAllSuccessful = true;
       String batchErrorMessage = "";
 
-      for (String statement : statements) {
-        try {
-          PhysicalPlan physicalPlan = processor.parseSQLToPhysicalPlan(statement, zoneIds.get());
-          physicalPlan.setProposer(username.get());
-          if (physicalPlan.isQuery()) {
-            return getTSBathExecuteStatementResp(TS_StatusCode.ERROR_STATUS,
-                "statement is query :" + statement, result);
-          }
-          TSExecuteStatementResp resp = executeUpdateStatement(physicalPlan);
-          if (resp.getStatus().getStatusCode().equals(TS_StatusCode.SUCCESS_STATUS)) {
-            result.add(Statement.SUCCESS_NO_INFO);
-          } else {
-            result.add(Statement.EXECUTE_FAILED);
-            isAllSuccessful = false;
-            batchErrorMessage = resp.getStatus().getErrorMessage();
-          }
-        } catch (Exception e) {
-          String errMessage = String.format(
-              "Fail to generate physcial plan and execute for statement "
-                  + "%s beacuse %s",
-              statement, e.getMessage());
-          LOGGER.warn("Error occurred when executing {}", statement, e);
-          result.add(Statement.EXECUTE_FAILED);
-          isAllSuccessful = false;
-          batchErrorMessage = errMessage;
-        }
-      }
+//      for (String statement : statements) {
+//        try {
+//          PhysicalPlan physicalPlan = processor.parseSQLToPhysicalPlan(statement, zoneIds.get());
+//          physicalPlan.setProposer(username.get());
+//          if (physicalPlan.isQuery()) {
+//            return getTSBathExecuteStatementResp(TS_StatusCode.ERROR_STATUS,
+//                "statement is query :" + statement, result);
+//          }
+//          TSExecuteStatementResp resp = executeUpdateStatement(physicalPlan);
+//          if (resp.getStatus().getStatusCode().equals(TS_StatusCode.SUCCESS_STATUS)) {
+//            result.add(Statement.SUCCESS_NO_INFO);
+//          } else {
+//            result.add(Statement.EXECUTE_FAILED);
+//            isAllSuccessful = false;
+//            batchErrorMessage = resp.getStatus().getErrorMessage();
+//          }
+//        } catch (Exception e) {
+//          String errMessage = String.format(
+//              "Fail to generate physcial plan and execute for statement "
+//                  + "%s beacuse %s",
+//              statement, e.getMessage());
+//          LOGGER.warn("Error occurred when executing {}", statement, e);
+//          result.add(Statement.EXECUTE_FAILED);
+//          isAllSuccessful = false;
+//          batchErrorMessage = errMessage;
+//        }
+//      }
       if (isAllSuccessful) {
         return getTSBathExecuteStatementResp(TS_StatusCode.SUCCESS_STATUS,
             "Execute batch statements successfully", result);
