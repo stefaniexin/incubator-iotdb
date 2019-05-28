@@ -19,6 +19,8 @@
 package org.apache.iotdb.cluster.qp.executor;
 
 import com.alipay.sofa.jraft.entity.PeerId;
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.iotdb.cluster.config.ClusterConfig;
 import org.apache.iotdb.cluster.config.ClusterConstant;
 import org.apache.iotdb.cluster.config.ClusterDescriptor;
@@ -90,15 +92,17 @@ public abstract class AbstractQPExecutor {
    * @param taskRetryNum Number of QPTask retries due to timeout and redirected.
    * @return basic response
    */
-  protected BasicResponse syncHandleSingleTaskGetRes(SingleQPTask task, int taskRetryNum, String taskInfo, String groupId)
+  private BasicResponse syncHandleSingleTaskGetRes(SingleQPTask task, int taskRetryNum, String taskInfo, String groupId, Set<PeerId> downNodeSet)
       throws InterruptedException, RaftConnectionException {
     PeerId firstNode = task.getTargetNode();
+    RaftUtils.updatePeerIDOrder(firstNode, groupId);
     BasicResponse response = null;
     try {
       asyncSendSingleTask(task, taskRetryNum);
-      response = syncGetSingleTaskRes(task, taskRetryNum, taskInfo, groupId);
+      response = syncGetSingleTaskRes(task, taskRetryNum, taskInfo, groupId, downNodeSet);
     } catch (RaftConnectionException ex) {
       boolean success = false;
+      downNodeSet.add(firstNode);
       while (!success) {
         PeerId nextNode = null;
         try {
@@ -113,11 +117,12 @@ public abstract class AbstractQPExecutor {
           task.setTargetNode(nextNode);
           task.setTaskState(TaskState.INITIAL);
           asyncSendSingleTask(task, taskRetryNum);
-          response = syncGetSingleTaskRes(task, taskRetryNum, taskInfo, groupId);
+          response = syncGetSingleTaskRes(task, taskRetryNum, taskInfo, groupId, downNodeSet);
           LOGGER.debug("{} task for group {} to node {} succeed.", taskInfo, groupId, nextNode);
           success = true;
         } catch (RaftConnectionException e1) {
           LOGGER.debug("{} task for group {} to node {} fail.", taskInfo, groupId, nextNode);
+          downNodeSet.add(nextNode);
         }
       }
       LOGGER.debug("The final result for {} task is {}", taskInfo, success);
@@ -126,6 +131,11 @@ public abstract class AbstractQPExecutor {
       }
     }
     return response;
+  }
+
+  protected BasicResponse syncHandleSingleTaskGetRes(SingleQPTask task, int taskRetryNum, String taskInfo, String groupId)
+      throws RaftConnectionException, InterruptedException {
+    return syncHandleSingleTaskGetRes(task, taskRetryNum, taskInfo, groupId, new HashSet<>());
   }
 
   /**
@@ -149,7 +159,7 @@ public abstract class AbstractQPExecutor {
    * @param task rpc task
    * @param taskRetryNum Retry time of the task
    */
-  private BasicResponse syncGetSingleTaskRes(SingleQPTask task, int taskRetryNum, String taskInfo, String groupId)
+  private BasicResponse syncGetSingleTaskRes(SingleQPTask task, int taskRetryNum, String taskInfo, String groupId, Set<PeerId> downNodeSet)
       throws InterruptedException, RaftConnectionException {
     task.await();
     PeerId leader;
@@ -160,8 +170,16 @@ public abstract class AbstractQPExecutor {
       } else if (task.getTaskState() == TaskState.REDIRECT) {
         // redirect to the right leader
         leader = PeerId.parsePeer(task.getResponse().getLeaderStr());
-        LOGGER.debug("Redirect leader: {}, group id = {}", leader, task.getRequest().getGroupID());
-        RaftUtils.updateRaftGroupLeader(task.getRequest().getGroupID(), leader);
+
+        if (downNodeSet.contains(leader)) {
+          LOGGER.debug("Redirect leader {} is down, group {} might be down.", leader, groupId);
+          throw new RaftConnectionException(
+              String.format("Can not connect to leader of remote node : %s", task.getTargetNode()));
+        } else {
+          LOGGER
+              .debug("Redirect leader: {}, group id = {}", leader, task.getRequest().getGroupID());
+          RaftUtils.updateRaftGroupLeader(task.getRequest().getGroupID(), leader);
+        }
       } else {
         RaftUtils.removeCachedRaftGroupLeader(groupId);
         LOGGER.debug("Remove cached raft group leader of {}", groupId);
@@ -169,7 +187,7 @@ public abstract class AbstractQPExecutor {
       }
       task.setTargetNode(leader);
       task.resetTask();
-      return syncHandleSingleTaskGetRes(task, taskRetryNum + 1, taskInfo, groupId);
+      return syncHandleSingleTaskGetRes(task, taskRetryNum + 1, taskInfo, groupId, downNodeSet);
     }
     return task.getResponse();
   }

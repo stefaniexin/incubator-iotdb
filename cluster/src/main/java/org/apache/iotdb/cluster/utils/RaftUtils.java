@@ -134,7 +134,40 @@ public class RaftUtils {
     }
     nodeIndexMap.get().put(groupId, (index + 1) % len);
 
+    LOGGER.debug("Get node {} for group {}", peerId, groupId);
+
     return peerId;
+  }
+
+  public static void updatePeerIDOrder(PeerId peerId, String groupId) {
+    int index = -1;
+    int len;
+    if (groupId.equals(ClusterConfig.METADATA_GROUP_ID)) {
+      RaftService service = (RaftService) server.getMetadataHolder().getService();
+      List<PeerId> peerIdList = service.getPeerIdList();
+      len = peerIdList.size();
+      index = peerIdList.indexOf(peerId);
+    } else {
+      PhysicalNode[] physicalNodes = router.getNodesByGroupId(groupId);
+      len = physicalNodes.length;
+      PhysicalNode node = getPhysicalNodeFrom(peerId);
+      for (int i = 0; i < physicalNodes.length; i++) {
+        if (physicalNodes[i].equals(node)) {
+          index = i;
+          break;
+        }
+      }
+    }
+
+    if (index == -1) {
+      LOGGER.warn(
+          "Fail to update order of node {} for group {}, because the group doesn't contain it.",
+          peerId, groupId);
+    } else {
+      LOGGER.debug("Update order of node {} for group {}, current index is {}", peerId, groupId,
+          index);
+      nodeIndexMap.get().put(groupId, (index + 1) % len);
+    }
   }
 
   /**
