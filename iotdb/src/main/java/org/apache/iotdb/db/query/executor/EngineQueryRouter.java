@@ -220,21 +220,4 @@ public class EngineQueryRouter {
     return merged;
   }
 
-  /**
-   * TODO
-   * This is only for test TsFileProcessor now. This method will finally be replaced when
-   * fileNodeManager is refactored
-   */
-  public QueryDataSet query(QueryExpression queryExpression, TsFileProcessor processor,
-      QueryContext context)
-      throws StorageGroupManagerException, IOException {
-
-    if (queryExpression.hasQueryFilter()) {
-      throw new NotImplementedException("this function is just for test...");
-    } else {
-      EngineExecutorWithoutTimeGenerator engineExecutor = new EngineExecutorWithoutTimeGenerator(
-          queryExpression);
-      return engineExecutor.executeWithoutFilter(context, processor);
-    }
-  }
 }

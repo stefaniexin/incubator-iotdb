@@ -30,12 +30,14 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.io.FileUtils;
 import org.apache.iotdb.db.conf.IoTDBConfig;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
-import org.apache.iotdb.db.engine.filenode.FileNodeManager;
+import org.apache.iotdb.db.engine.DatabaseEngine;
+import org.apache.iotdb.db.engine.DatabaseEngineFactory;
 import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.monitor.IStatistic;
 import org.apache.iotdb.db.monitor.MonitorConstants;
 import org.apache.iotdb.db.monitor.MonitorConstants.FileSizeConstants;
 import org.apache.iotdb.db.monitor.StatMonitor;
+import org.apache.iotdb.db.qp.physical.crud.InsertPlan;
 import org.apache.iotdb.tsfile.common.conf.TSFileConfig;
 import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
@@ -54,13 +56,13 @@ public class FileSize implements IStatistic {
   private static final Logger LOGGER = LoggerFactory.getLogger(FileSize.class);
   private static final long ABNORMAL_VALUE = -1L;
   private static final long INIT_VALUE_IF_FILE_NOT_EXIST = 0L;
-  private FileNodeManager fileNodeManager;
+  private DatabaseEngine databaseEngine;
 
   @Override
-  public Map<String, TSRecord> getAllStatisticsValue() {
+  public Map<String, InsertPlan> getAllStatisticsValue() {
     long curTime = System.currentTimeMillis();
     TSRecord tsRecord = StatMonitor
-        .convertToTSRecord(getStatParamsHashMap(), MonitorConstants.FILE_SIZE_STORAGE_GROUP_NAME,
+        .convertToInsertPlan(getStatParamsHashMap(), MonitorConstants.FILE_SIZE_STORAGE_GROUP_NAME,
             curTime);
     HashMap<String, TSRecord> ret = new HashMap<>();
     ret.put(MonitorConstants.FILE_SIZE_STORAGE_GROUP_NAME, tsRecord);
@@ -77,11 +79,11 @@ public class FileSize implements IStatistic {
       hashMap.put(seriesPath, MonitorConstants.DATA_TYPE_INT64);
       Path path = new Path(seriesPath);
       try {
-        fileNodeManager.addTimeSeries(path, TSDataType.valueOf(MonitorConstants.DATA_TYPE_INT64),
+        databaseEngine.addTimeSeries(path, TSDataType.valueOf(MonitorConstants.DATA_TYPE_INT64),
             TSEncoding.valueOf("RLE"), CompressionType.valueOf(TSFileConfig.compressor),
             Collections.emptyMap());
       } catch (StorageGroupManagerException e) {
-        LOGGER.error("Register File Size Stats into fileNodeManager Failed.", e);
+        LOGGER.error("Register File Size Stats into databaseEngine Failed.", e);
       }
     }
     StatMonitor.getInstance().registerStatStorageGroup(hashMap);
@@ -114,7 +116,7 @@ public class FileSize implements IStatistic {
   }
 
   private FileSize() {
-    fileNodeManager = FileNodeManager.getInstance();
+    databaseEngine = DatabaseEngineFactory.getCurrent();
     if (config.isEnableStatMonitor()) {
       StatMonitor statMonitor = StatMonitor.getInstance();
       registerStatMetadata();

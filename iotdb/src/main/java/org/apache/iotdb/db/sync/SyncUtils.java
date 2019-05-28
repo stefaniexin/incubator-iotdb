@@ -25,7 +25,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.iotdb.db.conf.directories.Directories;
-import org.apache.iotdb.db.engine.filenode.TsFileResource;
+import org.apache.iotdb.db.engine.sgmanager.TsFileResource;
 import org.apache.iotdb.db.sync.conf.Constans;
 
 public class SyncUtils {

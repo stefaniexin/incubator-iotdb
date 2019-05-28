@@ -27,7 +27,7 @@ import org.apache.iotdb.db.conf.IoTDBConfig;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.engine.bufferwrite.Action;
 import org.apache.iotdb.db.engine.bufferwrite.ActionException;
-import org.apache.iotdb.db.engine.bufferwrite.FileNodeConstants;
+import org.apache.iotdb.db.engine.EngingeConstants;
 import org.apache.iotdb.db.engine.version.SysTimeVersionController;
 import org.apache.iotdb.db.exception.OverflowProcessorException;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
@@ -82,16 +82,16 @@ public class OverflowProcessorBenchmark {
 
   public static void main(String[] args) throws IOException, OverflowProcessorException {
     Map<String, Action> parameters = new HashMap<>();
-    parameters.put(FileNodeConstants.OVERFLOW_FLUSH_ACTION, new Action() {
+    parameters.put(EngingeConstants.OVERFLOW_FLUSH_ACTION, new Action() {
       @Override
       public void act() throws ActionException {
-        System.out.println(FileNodeConstants.OVERFLOW_FLUSH_ACTION);
+        System.out.println(EngingeConstants.OVERFLOW_FLUSH_ACTION);
       }
     });
-    parameters.put(FileNodeConstants.FILENODE_PROCESSOR_FLUSH_ACTION, new Action() {
+    parameters.put(EngingeConstants.FILENODE_PROCESSOR_FLUSH_ACTION, new Action() {
       @Override
       public void act() throws ActionException {
-        System.out.println(FileNodeConstants.FILENODE_PROCESSOR_FLUSH_ACTION);
+        System.out.println(EngingeConstants.FILENODE_PROCESSOR_FLUSH_ACTION);
       }
     });
     OverflowProcessor overflowProcessor = new OverflowProcessor("Overflow_bench", parameters,

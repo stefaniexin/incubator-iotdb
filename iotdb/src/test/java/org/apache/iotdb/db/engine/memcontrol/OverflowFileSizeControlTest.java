@@ -29,7 +29,7 @@ import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.engine.MetadataManagerHelper;
 import org.apache.iotdb.db.engine.bufferwrite.Action;
 import org.apache.iotdb.db.engine.bufferwrite.ActionException;
-import org.apache.iotdb.db.engine.bufferwrite.FileNodeConstants;
+import org.apache.iotdb.db.engine.EngingeConstants;
 import org.apache.iotdb.db.engine.version.SysTimeVersionController;
 import org.apache.iotdb.db.engine.overflow.io.OverflowProcessor;
 import org.apache.iotdb.db.exception.OverflowProcessorException;
@@ -78,14 +78,14 @@ public class OverflowFileSizeControlTest {
     }
   };
 
-  private Action filenodemanagerbackupaction = new Action() {
+  private Action DatabaseEnginebackupaction = new Action() {
 
     @Override
     public void act() throws ActionException {
     }
   };
 
-  private Action filenodemanagerflushaction = new Action() {
+  private Action DatabaseEngineflushaction = new Action() {
 
     @Override
     public void act() throws ActionException {
@@ -95,8 +95,8 @@ public class OverflowFileSizeControlTest {
   @Before
   public void setUp() throws Exception {
     parameters = new HashMap<>();
-    parameters.put(FileNodeConstants.OVERFLOW_FLUSH_ACTION, overflowflushaction);
-    parameters.put(FileNodeConstants.FILENODE_PROCESSOR_FLUSH_ACTION, filenodeflushaction);
+    parameters.put(EngingeConstants.OVERFLOW_FLUSH_ACTION, overflowflushaction);
+    parameters.put(EngingeConstants.FILENODE_PROCESSOR_FLUSH_ACTION, filenodeflushaction);
 
     overflowFileSize = dbConfig.getOverflowFileSizeThreshold();
     groupSize = tsconfig.groupSizeInByte;

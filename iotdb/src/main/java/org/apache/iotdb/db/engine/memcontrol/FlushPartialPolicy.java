@@ -20,6 +20,7 @@ package org.apache.iotdb.db.engine.memcontrol;
 
 import org.apache.iotdb.db.concurrent.ThreadName;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
+import org.apache.iotdb.db.engine.DatabaseEngineFactory;
 import org.apache.iotdb.db.utils.MemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +60,7 @@ public class FlushPartialPolicy implements Policy {
 
   private Thread createWorkerThread() {
     return new Thread(() -> {
-      FileNodeManager.getInstance().forceFlush(BasicMemController.UsageLevel.SAFE);
+      DatabaseEngineFactory.getCurrent().forceFlush(BasicMemController.UsageLevel.SAFE);
       try {
         Thread.sleep(sleepInterval);
       } catch (InterruptedException e) {

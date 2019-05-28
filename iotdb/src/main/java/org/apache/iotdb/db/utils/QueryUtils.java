@@ -22,7 +22,7 @@ package org.apache.iotdb.db.utils;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import org.apache.iotdb.db.engine.filenode.TsFileResource;
+import org.apache.iotdb.db.engine.sgmanager.TsFileResource;
 import org.apache.iotdb.db.engine.modification.Deletion;
 import org.apache.iotdb.db.engine.modification.Modification;
 import org.apache.iotdb.db.query.context.QueryContext;

@@ -16,15 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.iotdb.db.engine.bufferwrite;
+package org.apache.iotdb.db.engine;
 
-public class ActionException extends Exception{
+/**
+ * Constants for using in bufferwrite, overflow and filenode.
+ *
+ */
+public class EngingeConstants {
 
-  public ActionException(String message) {
-    super(message);
+  private EngingeConstants(){
   }
 
-  public ActionException(Throwable cause) {
-    super(cause);
-  }
+  public static final String OVERFLOW_FLUSH_ACTION = "OVERFLOW_FLUSH_ACTION";
+  public static final String BUFFERWRITE_FLUSH_ACTION = "BUFFERWRITE_FLUSH_ACTION";
+  public static final String BUFFERWRITE_CLOSE_ACTION = "BUFFERWRITE_CLOSE_ACTION";
+  public static final String FILENODE_PROCESSOR_FLUSH_ACTION = "FILENODE_PROCESSOR_FLUSH_ACTION";
+
+  public static final String TSFILE_NAME_SEPARATOR = "-";
 }

@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.iotdb.db.engine.PathUtils;
 import org.apache.iotdb.db.engine.bufferwrite.Action;
 import org.apache.iotdb.db.engine.bufferwrite.ActionException;
-import org.apache.iotdb.db.engine.bufferwrite.FileNodeConstants;
+import org.apache.iotdb.db.engine.EngingeConstants;
 import org.apache.iotdb.db.engine.querycontext.MergeSeriesDataSource;
 import org.apache.iotdb.db.engine.querycontext.OverflowSeriesDataSource;
 import org.apache.iotdb.db.engine.version.SysTimeVersionController;
@@ -67,8 +67,8 @@ public class OverflowProcessorTest {
   public void setUp() throws Exception {
     EnvironmentUtils.envSetUp();
     parameters = new HashMap<String, Action>();
-    parameters.put(FileNodeConstants.OVERFLOW_FLUSH_ACTION, overflowflushaction);
-    parameters.put(FileNodeConstants.FILENODE_PROCESSOR_FLUSH_ACTION, filenodeflushaction);
+    parameters.put(EngingeConstants.OVERFLOW_FLUSH_ACTION, overflowflushaction);
+    parameters.put(EngingeConstants.FILENODE_PROCESSOR_FLUSH_ACTION, filenodeflushaction);
   }
 
   @After

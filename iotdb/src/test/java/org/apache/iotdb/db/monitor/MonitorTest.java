@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.iotdb.db.conf.IoTDBConfig;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
-import org.apache.iotdb.db.engine.filenode.FileNodeManager;
+import org.apache.iotdb.db.engine.filenode.DatabaseEngine;
 import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.metadata.MManager;
 import org.apache.iotdb.db.monitor.MonitorConstants.FileSizeConstants;
@@ -63,22 +63,22 @@ public class MonitorTest {
   }
 
   @Test
-  public void testFileNodeManagerMonitorAndAddMetadata() {
-    FileNodeManager fManager = FileNodeManager.getInstance();
+  public void testDatabaseEngineMonitorAndAddMetadata() {
+    DatabaseEngine dbEngine = DatabaseEngine.getInstance();
     FileSize fileSize = FileSize.getInstance();
     statMonitor = StatMonitor.getInstance();
     statMonitor.registerStatStorageGroup();
-    fManager.getStatParamsHashMap().forEach((key, value) -> value.set(0));
+    dbEngine.getStatParamsHashMap().forEach((key, value) -> value.set(0));
     fileSize.getStatParamsHashMap().forEach((key, value) -> value.set(0));
     statMonitor.clearIStatisticMap();
-    statMonitor.registerStatistics(fManager.getClass().getSimpleName(), fManager);
+    statMonitor.registerStatistics(dbEngine.getClass().getSimpleName(), dbEngine);
     statMonitor
         .registerStatistics(MonitorConstants.FILE_SIZE_STORAGE_GROUP_NAME, FileSize.getInstance());
     // add metadata
     MManager mManager = MManager.getInstance();
-    fManager.registerStatMetadata();
+    dbEngine.registerStatMetadata();
     fileSize.registerStatMetadata();
-    Map<String, AtomicLong> statParamsHashMap = fManager.getStatParamsHashMap();
+    Map<String, AtomicLong> statParamsHashMap = dbEngine.getStatParamsHashMap();
     Map<String, AtomicLong> fileSizeStatsHashMap = fileSize.getStatParamsHashMap();
     for (String statParam : statParamsHashMap.keySet()) {
       assertTrue(mManager.pathExist(
@@ -103,10 +103,10 @@ public class MonitorTest {
 
     // Get stat data and test right
 
-    Map<String, TSRecord> statHashMap = fManager.getAllStatisticsValue();
+    Map<String, TSRecord> statHashMap = dbEngine.getAllStatisticsValue();
     Map<String, TSRecord> fileSizeStatMap = fileSize.getAllStatisticsValue();
 
-    String path = fManager.getAllPathForStatistic().get(0);
+    String path = dbEngine.getAllPathForStatistic().get(0);
     String fileSizeStatPath = fileSize.getAllPathForStatistic().get(0);
     int pos = path.lastIndexOf('.');
     int fileSizeStatPos = fileSizeStatPath.lastIndexOf('.');
@@ -138,7 +138,7 @@ public class MonitorTest {
     }
 
     try {
-      fManager.deleteAll();
+      dbEngine.deleteAll();
     } catch (StorageGroupManagerException e) {
       e.printStackTrace();
       fail(e.getMessage());

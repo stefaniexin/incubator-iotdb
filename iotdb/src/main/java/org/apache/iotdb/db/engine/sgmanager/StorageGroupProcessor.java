@@ -48,8 +48,7 @@ import org.apache.iotdb.db.conf.IoTDBConstant;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.conf.directories.Directories;
 import org.apache.iotdb.db.engine.Processor;
-import org.apache.iotdb.db.engine.bufferwrite.FileNodeConstants;
-import org.apache.iotdb.db.engine.filenode.TsFileResource;
+import org.apache.iotdb.db.engine.EngingeConstants;
 import org.apache.iotdb.db.engine.merge.MergeTask;
 import org.apache.iotdb.db.engine.modification.Deletion;
 import org.apache.iotdb.db.engine.modification.ModificationFile;
@@ -268,7 +267,7 @@ public class StorageGroupProcessor extends Processor implements IStatistic {
 
 
   @Override
-  public Map<String, TSRecord> getAllStatisticsValue() {
+  public Map<String, InsertPlan> getAllStatisticsValue() {
     Long curTime = System.currentTimeMillis();
     HashMap<String, TSRecord> tsRecordHashMap = new HashMap<>();
     TSRecord tsRecord = new TSRecord(curTime, statStorageGroupName);
@@ -781,7 +780,7 @@ public class StorageGroupProcessor extends Processor implements IStatistic {
 
     mergeBaseDir = Directories.getInstance().getNextFolderForTsfile();
     mergeFileName = minimumTime
-        + FileNodeConstants.BUFFERWRITE_FILE_SEPARATOR + System.currentTimeMillis()
+        + EngingeConstants.TSFILE_NAME_SEPARATOR + System.currentTimeMillis()
         + MERGE_TEMP_SUFFIX;
     mergeOutputPath = constructOutputFilePath(mergeBaseDir, getProcessorName(),
         mergeFileName);

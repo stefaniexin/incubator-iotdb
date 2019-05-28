@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.apache.iotdb.db.conf.IoTDBConstant;
-import org.apache.iotdb.db.engine.filenode.FileNodeManager;
 import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.ProcessorException;
 import org.apache.iotdb.db.exception.RecoverException;
@@ -285,7 +284,7 @@ public class ExclusiveLogRecoverPerformer implements RecoverPerformer {
               + " logs failed to recover, see logs above for details");
     }
     try {
-      FileNodeManager.getInstance().closeOneFileNode(writeLogNode.getFileNodeName());
+      DatabaseEngineFactory.getCurrent().closeOneFileNode(writeLogNode.getFileNodeName());
     } catch (StorageGroupManagerException e) {
       logger.error("Log node {} cannot perform flush after replaying logs! Because {}",
           writeLogNode.getIdentifier(), e.getMessage());

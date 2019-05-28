@@ -17,11 +17,10 @@
  * under the License.
  */
 package org.apache.iotdb.db.writelog.replay;
-
-import org.apache.iotdb.db.engine.filenode.FileNodeManager;
-import org.apache.iotdb.db.exception.StorageGroupManagerException;
+import org.apache.iotdb.db.engine.DatabaseEngineFactory;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.ProcessorException;
+import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.metadata.MManager;
 import org.apache.iotdb.db.qp.physical.PhysicalPlan;
 import org.apache.iotdb.db.qp.physical.crud.DeletePlan;
@@ -30,8 +29,6 @@ import org.apache.iotdb.db.qp.physical.crud.UpdatePlan;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.read.common.Path;
 import org.apache.iotdb.tsfile.utils.Pair;
-import org.apache.iotdb.tsfile.write.record.TSRecord;
-import org.apache.iotdb.tsfile.write.record.datapoint.DataPoint;
 
 public class ConcreteLogReplayer implements LogReplayer {
 
@@ -61,27 +58,14 @@ public class ConcreteLogReplayer implements LogReplayer {
   }
 
   private void multiInsert(InsertPlan insertPlan)
-      throws PathErrorException, StorageGroupManagerException {
-    String deviceId = insertPlan.getDeviceId();
-    long insertTime = insertPlan.getTime();
-    String[] measurementList = insertPlan.getMeasurements();
-    String[] insertValues = insertPlan.getValues();
-
-    TSRecord tsRecord = new TSRecord(insertTime, deviceId);
-    for (int i = 0; i < measurementList.length; i++) {
-      String pathKey = deviceId + "." + measurementList[i];
-      TSDataType dataType = MManager.getInstance().getSeriesType(pathKey);
-      String value = insertValues[i];
-      DataPoint dataPoint = DataPoint.getDataPoint(dataType, measurementList[i], value);
-      tsRecord.addTuple(dataPoint);
-    }
-    FileNodeManager.getInstance().insert(tsRecord, true);
+      throws StorageGroupManagerException {
+    DatabaseEngineFactory.getCurrent().insert(insertPlan, true);
   }
 
   private void update(UpdatePlan updatePlan) throws StorageGroupManagerException, PathErrorException {
     TSDataType dataType = MManager.getInstance().getSeriesType(updatePlan.getPath().getFullPath());
     for (Pair<Long, Long> timePair : updatePlan.getIntervals()) {
-      FileNodeManager.getInstance().update(updatePlan.getPath().getDevice(),
+      DatabaseEngineFactory.getCurrent().update(updatePlan.getPath().getDevice(),
           updatePlan.getPath().getMeasurement(), timePair.left, timePair.right, dataType,
           updatePlan.getValue());
     }
@@ -90,10 +74,10 @@ public class ConcreteLogReplayer implements LogReplayer {
   private void delete(DeletePlan deletePlan, boolean isOverflow) throws StorageGroupManagerException {
     for (Path path : deletePlan.getPaths()) {
       if (isOverflow) {
-        FileNodeManager.getInstance().deleteOverflow(path.getDevice(), path.getMeasurement(),
+        DatabaseEngineFactory.getCurrent().deleteInOverflow(path.getDevice(), path.getMeasurement(),
             deletePlan.getDeleteTime());
       } else {
-        FileNodeManager.getInstance().deleteBufferWrite(path.getDevice(), path.getMeasurement(),
+        DatabaseEngineFactory.getCurrent().deleteInSeqFile(path.getDevice(), path.getMeasurement(),
             deletePlan.getDeleteTime());
       }
     }

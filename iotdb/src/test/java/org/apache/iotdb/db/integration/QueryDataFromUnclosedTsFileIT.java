@@ -25,7 +25,7 @@ import static org.apache.iotdb.db.utils.EnvironmentUtils.TEST_QUERY_JOB_ID;
 import java.io.IOException;
 import java.util.Collections;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
-import org.apache.iotdb.db.engine.filenode.FileNodeManager;
+import org.apache.iotdb.db.engine.filenode.DatabaseEngine;
 import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.MetadataArgsErrorException;
 import org.apache.iotdb.db.exception.PathErrorException;
@@ -50,7 +50,7 @@ import org.junit.Test;
 public class QueryDataFromUnclosedTsFileIT {
 
   long bufferWriteFileSize;
-  FileNodeManager sgManager;
+  DatabaseEngine sgManager;
   MManager mManager;
   EngineQueryRouter queryManager;
   @Before
@@ -61,7 +61,7 @@ public class QueryDataFromUnclosedTsFileIT {
     TEST_QUERY_CONTEXT = new QueryContext(TEST_QUERY_JOB_ID);
     bufferWriteFileSize = IoTDBDescriptor.getInstance().getConfig().getBufferwriteFileSizeThreshold();
     //IoTDBDescriptor.getInstance().getConfig().setBufferwriteFileSizeThreshold(100);
-    sgManager  = FileNodeManager.getInstance();
+    sgManager  = DatabaseEngine.getInstance();
     mManager = MManager.getInstance();
     queryManager = new EngineQueryRouter();
   }

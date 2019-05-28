@@ -19,10 +19,11 @@
 
 package org.apache.iotdb.db.query.factory;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.iotdb.db.engine.filenode.TsFileResource;
+import org.apache.iotdb.db.engine.sgmanager.TsFileResource;
 import org.apache.iotdb.db.engine.modification.Modification;
 import org.apache.iotdb.db.engine.modification.ModificationFile;
 import org.apache.iotdb.db.engine.querycontext.QueryDataSource;
@@ -51,8 +52,10 @@ import org.apache.iotdb.tsfile.read.common.Path;
 import org.apache.iotdb.tsfile.read.controller.ChunkLoaderImpl;
 import org.apache.iotdb.tsfile.read.controller.MetadataQuerier;
 import org.apache.iotdb.tsfile.read.controller.MetadataQuerierByFileImpl;
+import org.apache.iotdb.tsfile.read.filter.basic.Filter;
 import org.apache.iotdb.tsfile.read.reader.chunk.ChunkReader;
 import org.apache.iotdb.tsfile.read.reader.chunk.ChunkReaderByTimestamp;
+import org.apache.iotdb.tsfile.read.reader.chunk.ChunkReaderWithFilter;
 import org.apache.iotdb.tsfile.read.reader.chunk.ChunkReaderWithoutFilter;
 
 public class SeriesReaderFactory {
@@ -70,7 +73,7 @@ public class SeriesReaderFactory {
    * process, it's no need to maintain the opened file stream.
    */
   public PriorityMergeReader createUnSeqMergeReader(
-      SeriesDataSource overflowSeriesDataSource, QueryContext context)
+      SeriesDataSource overflowSeriesDataSource, QueryContext context, Filter filter)
       throws IOException {
 
     PriorityMergeReader unSeqMergeReader = new PriorityMergeReader();
@@ -87,7 +90,12 @@ public class SeriesReaderFactory {
 
       for (ChunkMetaData chunkMetaData : metaDataList) {
         Chunk chunk = chunkLoader.getChunk(chunkMetaData);
-        ChunkReader chunkReader = new ChunkReaderWithoutFilter(chunk);
+        ChunkReader chunkReader;
+        if (filter == null) {
+          chunkReader = new ChunkReaderWithoutFilter(chunk);
+        } else {
+          chunkReader = new ChunkReaderWithFilter(chunk, filter);
+        }
 
         unSeqMergeReader
             .addReaderWithPriority(new EngineChunkReader(chunkReader, tsFileSequenceReader),
@@ -114,7 +122,7 @@ public class SeriesReaderFactory {
     SequenceDataReader seqReader = new SequenceDataReader(seqDataSource, null, context);
 
     // unSequence merge reader
-    IPointReader unSeqReader = createUnSeqMergeReader(overflowDataSource, context);
+    IPointReader unSeqReader = createUnSeqMergeReader(overflowDataSource, context, null);
 
     return new AllDataReader(seqReader, unSeqReader);
   }

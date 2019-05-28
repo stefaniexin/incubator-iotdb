@@ -21,7 +21,7 @@ package org.apache.iotdb.db.engine.filenodev2;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.iotdb.db.engine.filenode.FileNodeManager;
+import org.apache.iotdb.db.engine.filenode.DatabaseEngine;
 import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.MetadataArgsErrorException;
 import org.apache.iotdb.db.exception.PathErrorException;
@@ -36,7 +36,7 @@ import org.apache.iotdb.tsfile.write.record.datapoint.LongDataPoint;
 /**
  * Bench The filenode manager with mul-thread and get its performance.
  */
-public class FileNodeManagerBenchmark {
+public class DatabaseEngineBenchmark {
 
   private static int numOfWoker = 10;
   private static int numOfDevice = 10;
@@ -113,7 +113,7 @@ public class FileNodeManagerBenchmark {
           long time = RandomNum.getRandomLong(1, seed);
           String deltaObject = devices[(int) (time % numOfDevice)];
           TSRecord tsRecord = getRecord(deltaObject, time);
-          FileNodeManager.getInstance().insert(tsRecord, true);
+          DatabaseEngine.getInstance().insert(tsRecord, true);
         }
       } catch (StorageGroupManagerException e) {
         e.printStackTrace();

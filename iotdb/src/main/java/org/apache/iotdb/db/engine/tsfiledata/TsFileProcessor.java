@@ -42,9 +42,8 @@ import org.apache.iotdb.db.conf.IoTDBConstant;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.conf.directories.Directories;
 import org.apache.iotdb.db.engine.Processor;
-import org.apache.iotdb.db.engine.bufferwrite.FileNodeConstants;
-import org.apache.iotdb.db.engine.bufferwrite.RestorableTsFileIOWriter;
-import org.apache.iotdb.db.engine.filenode.TsFileResource;
+import org.apache.iotdb.db.engine.EngingeConstants;
+import org.apache.iotdb.db.engine.sgmanager.TsFileResource;
 import org.apache.iotdb.db.engine.memcontrol.BasicMemController;
 import org.apache.iotdb.db.engine.memcontrol.BasicMemController.UsageLevel;
 import org.apache.iotdb.db.engine.memtable.IMemTable;
@@ -60,7 +59,6 @@ import org.apache.iotdb.db.engine.querycontext.UnsealedTsFile;
 import org.apache.iotdb.db.engine.sgmanager.OperationResult;
 import org.apache.iotdb.db.engine.sgmanager.StorageGroupProcessor;
 import org.apache.iotdb.db.engine.version.VersionController;
-import org.apache.iotdb.db.exception.FileNodeProcessorException;
 import org.apache.iotdb.db.exception.TsFileProcessorException;
 import org.apache.iotdb.db.qp.constant.DatetimeUtils;
 import org.apache.iotdb.db.qp.physical.crud.InsertPlan;
@@ -236,12 +234,12 @@ public class TsFileProcessor extends Processor {
       throws TsFileProcessorException {
     File[] tsFiles = dataFolder
         .listFiles(x -> !x.getName().contains(RestorableTsFileIOWriter.RESTORE_SUFFIX)
-            && x.getName().split(FileNodeConstants.BUFFERWRITE_FILE_SEPARATOR).length == 2);
+            && x.getName().split(EngingeConstants.TSFILE_NAME_SEPARATOR).length == 2);
     if (tsFiles == null || tsFiles.length == 0) {
       return;
     }
     Arrays.sort(tsFiles, Comparator.comparingLong(x -> Long
-        .parseLong(x.getName().split(FileNodeConstants.BUFFERWRITE_FILE_SEPARATOR)[0])));
+        .parseLong(x.getName().split(EngingeConstants.TSFILE_NAME_SEPARATOR)[0])));
 
     for (File tsfile : tsFiles) {
       if (tsfile.getName().endsWith(StorageGroupProcessor.MERGE_TEMP_SUFFIX)) {
@@ -259,7 +257,7 @@ public class TsFileProcessor extends Processor {
   // add one TsFiles to tsFileResources and update device inserted time map
   private void addResource(File tsfile) throws TsFileProcessorException {
     //TODO we'd better define a file suffix for TsFile, e.g., .ts
-    String[] names = tsfile.getName().split(FileNodeConstants.BUFFERWRITE_FILE_SEPARATOR);
+    String[] names = tsfile.getName().split(EngingeConstants.TSFILE_NAME_SEPARATOR);
     long time = Long.parseLong(names[0]);
     if (fileNamePrefix < time) {
       fileNamePrefix = time;
@@ -299,7 +297,7 @@ public class TsFileProcessor extends Processor {
       LOGGER.debug("The bufferwrite processor data dir doesn't exists, create new directory {}.",
           dataFolder.getAbsolutePath());
     }
-    String fileName = (fileNamePrefix + 1) + FileNodeConstants.BUFFERWRITE_FILE_SEPARATOR
+    String fileName = (fileNamePrefix + 1) + EngingeConstants.TSFILE_NAME_SEPARATOR
         + System.currentTimeMillis();
     return new File(dataFolder, fileName);
   }

@@ -33,7 +33,7 @@ import org.apache.iotdb.db.engine.PathUtils;
 import org.apache.iotdb.db.engine.bufferwrite.Action;
 import org.apache.iotdb.db.engine.bufferwrite.ActionException;
 import org.apache.iotdb.db.engine.bufferwrite.BufferWriteProcessor;
-import org.apache.iotdb.db.engine.bufferwrite.FileNodeConstants;
+import org.apache.iotdb.db.engine.EngingeConstants;
 import org.apache.iotdb.db.engine.version.SysTimeVersionController;
 import org.apache.iotdb.db.exception.BufferWriteProcessorException;
 import org.apache.iotdb.db.utils.EnvironmentUtils;
@@ -130,9 +130,9 @@ public class BufferwriteMetaSizeControlTest {
     new File(filename).delete();
 
     Map<String, Action> parameters = new HashMap<>();
-    parameters.put(FileNodeConstants.BUFFERWRITE_FLUSH_ACTION, bfflushaction);
-    parameters.put(FileNodeConstants.BUFFERWRITE_CLOSE_ACTION, bfcloseaction);
-    parameters.put(FileNodeConstants.FILENODE_PROCESSOR_FLUSH_ACTION, fnflushaction);
+    parameters.put(EngingeConstants.BUFFERWRITE_FLUSH_ACTION, bfflushaction);
+    parameters.put(EngingeConstants.BUFFERWRITE_CLOSE_ACTION, bfcloseaction);
+    parameters.put(EngingeConstants.FILENODE_PROCESSOR_FLUSH_ACTION, fnflushaction);
 
     try {
       processor = new BufferWriteProcessor(Directories.getInstance().getTsFolderForTest(), nsp,

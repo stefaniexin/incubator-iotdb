@@ -32,6 +32,7 @@ import org.apache.iotdb.db.qp.physical.PhysicalPlan;
 import org.apache.iotdb.db.qp.physical.crud.AggregationPlan;
 import org.apache.iotdb.db.qp.physical.crud.FillQueryPlan;
 import org.apache.iotdb.db.qp.physical.crud.GroupByPlan;
+import org.apache.iotdb.db.qp.physical.crud.InsertPlan;
 import org.apache.iotdb.db.qp.physical.crud.QueryPlan;
 import org.apache.iotdb.db.query.context.QueryContext;
 import org.apache.iotdb.db.query.executor.EngineQueryRouter;
@@ -172,25 +173,11 @@ public abstract class QueryProcessExecutor {
   protected abstract boolean delete(Path path, long deleteTime) throws ProcessorException;
 
   /**
-   * insert a single value. Only used in test
+   * execute insert command and return whether the operator is successful.
    *
-   * @param path seriesPath to be inserted
-   * @param insertTime - it's time point but not a range
-   * @param value value to be inserted
+   * @param plan the InsertPlan
    */
-  public abstract void insert(Path path, long insertTime, String value) throws ProcessorException;
-
-  /**
-   * executeWithGlobalTimeFilter insert command and return whether the operator is successful.
-   *
-   * @param deviceId deviceId to be inserted
-   * @param insertTime - it's time point but not a range
-   * @param measurementList measurements to be inserted
-   * @param insertValues values to be inserted
-   * @return - Operate Type.
-   */
-  public abstract int multiInsert(String deviceId, long insertTime, String[] measurementList,
-      String[] insertValues) throws ProcessorException;
+  public abstract void multiInsert(InsertPlan plan) throws ProcessorException;
 
   public abstract List<String> getAllPaths(String originPath) throws PathErrorException;
 

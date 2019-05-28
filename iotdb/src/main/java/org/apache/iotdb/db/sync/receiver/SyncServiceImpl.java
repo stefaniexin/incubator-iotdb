@@ -43,9 +43,9 @@ import org.apache.iotdb.db.concurrent.ThreadName;
 import org.apache.iotdb.db.conf.IoTDBConfig;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.conf.directories.Directories;
-import org.apache.iotdb.db.engine.filenode.FileNodeManager;
-import org.apache.iotdb.db.engine.filenode.OverflowChangeType;
-import org.apache.iotdb.db.engine.filenode.TsFileResource;
+import org.apache.iotdb.db.engine.DatabaseEngine;
+import org.apache.iotdb.db.engine.DatabaseEngineFactory;
+import org.apache.iotdb.db.engine.sgmanager.TsFileResource;
 import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.MetadataArgsErrorException;
 import org.apache.iotdb.db.exception.PathErrorException;
@@ -81,7 +81,7 @@ public class SyncServiceImpl implements SyncService.Iface {
 
   private static final Logger logger = LoggerFactory.getLogger(SyncServiceImpl.class);
 
-  private static final FileNodeManager fileNodeManager = FileNodeManager.getInstance();
+  private static final DatabaseEngine databaseEngine = DatabaseEngineFactory.getCurrent();
   /**
    * Metadata manager
    **/
@@ -474,12 +474,12 @@ public class SyncServiceImpl implements SyncService.Iface {
         );
         // call interface of load external file
         try {
-          if (!fileNodeManager.appendFileToFileNode(storageGroup, fileNode, path)) {
+          if (!databaseEngine.appendFileToStorageGroup(storageGroup, fileNode, path)) {
             // it is a file with overflow data
             if (config.isUpdate_historical_data_possibility()) {
               loadOldData(path);
             } else {
-              List<String> overlapFiles = fileNodeManager.getOverlapFilesFromFileNode(
+              List<String> overlapFiles = databaseEngine.getOverlapFilesFromStorageGroup(
                   storageGroup,
                   fileNode, uuid.get());
               if (overlapFiles.isEmpty()) {
@@ -555,11 +555,9 @@ public class SyncServiceImpl implements SyncService.Iface {
               }
             }
           }
-          if (insertExecutor
-              .multiInsert(deviceId, record.getTimestamp(), measurementList.toArray(new String[]{}),
-                  insertValues.toArray(new String[]{})) <= 0) {
-            throw new IOException("Inserting series data to IoTDB engine has failed.");
-          }
+          insertExecutor
+              .multiInsert(new InsertPlan(deviceId, record.getTimestamp(),
+                  measurementList.toArray(new String[]{}), insertValues.toArray(new String[]{})));
         }
       }
     } catch (IOException e) {
@@ -633,19 +631,13 @@ public class SyncServiceImpl implements SyncService.Iface {
           /** If there has no overlap data with the timeseries, inserting all data in the sync file **/
           if (originDataPoints.isEmpty()) {
             for (InsertPlan insertPlan : newDataPoints) {
-              if (insertExecutor.multiInsert(insertPlan.getDeviceId(), insertPlan.getTime(),
-                  insertPlan.getMeasurements(), insertPlan.getValues()) <= 0) {
-                throw new IOException("Inserting series data to IoTDB engine has failed.");
-              }
+              insertExecutor.multiInsert(insertPlan);
             }
           } else {
             /** Compare every data to get valid data **/
             for (InsertPlan insertPlan : newDataPoints) {
               if (!originDataPoints.contains(insertPlan)) {
-                if (insertExecutor.multiInsert(insertPlan.getDeviceId(), insertPlan.getTime(),
-                    insertPlan.getMeasurements(), insertPlan.getValues()) <= 0) {
-                  throw new IOException("Inserting series data to IoTDB engine has failed.");
-                }
+                insertExecutor.multiInsert(insertPlan);
               }
             }
           }

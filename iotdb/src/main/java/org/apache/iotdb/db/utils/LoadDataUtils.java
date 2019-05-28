@@ -31,7 +31,8 @@ import java.util.List;
 import java.util.Set;
 import org.apache.iotdb.db.conf.IoTDBConfig;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
-import org.apache.iotdb.db.engine.filenode.FileNodeManager;
+import org.apache.iotdb.db.engine.DatabaseEngine;
+import org.apache.iotdb.db.engine.DatabaseEngineFactory;
 import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.ProcessorException;
@@ -57,7 +58,7 @@ public class LoadDataUtils {
   private int writeInstanceThreshold;
   private boolean hasExtra = false;
   private long totalPointCount = 0;
-  private FileNodeManager fileNodeManager;
+  private DatabaseEngine databaseEngine;
   private IoTDBConfig conf = IoTDBDescriptor.getInstance().getConfig();
 
   /**
@@ -65,7 +66,7 @@ public class LoadDataUtils {
    */
   public LoadDataUtils() {
     writeInstanceMap = new HashSet<>();
-    fileNodeManager = FileNodeManager.getInstance();
+    databaseEngine = DatabaseEngineFactory.getCurrent();
     writeInstanceThreshold = conf.getWriteInstanceThreshold();
   }
 
@@ -151,9 +152,9 @@ public class LoadDataUtils {
     }
     // appeared before, insert directly
     try {
-      fileNodeManager.insert(record, false);
+      databaseEngine.insert(record, false);
     } catch (StorageGroupManagerException e) {
-      logger.error("failed when insert into fileNodeManager, record:{}", line, e);
+      logger.error("failed when insert into databaseEngine, record:{}", line, e);
     }
   }
 

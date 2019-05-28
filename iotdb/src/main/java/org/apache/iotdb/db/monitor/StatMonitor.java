@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -31,7 +32,8 @@ import org.apache.iotdb.db.concurrent.IoTDBThreadPoolFactory;
 import org.apache.iotdb.db.concurrent.ThreadName;
 import org.apache.iotdb.db.conf.IoTDBConfig;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
-import org.apache.iotdb.db.engine.filenode.FileNodeManager;
+import org.apache.iotdb.db.engine.DatabaseEngine;
+import org.apache.iotdb.db.engine.DatabaseEngineFactory;
 import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.StartupException;
@@ -39,6 +41,7 @@ import org.apache.iotdb.db.metadata.MManager;
 import org.apache.iotdb.db.monitor.MonitorConstants.StorageGroupManagerStatConstants;
 import org.apache.iotdb.db.monitor.MonitorConstants.StorageGroupProcessorStatConstants;
 import org.apache.iotdb.db.monitor.collector.FileSize;
+import org.apache.iotdb.db.qp.physical.crud.InsertPlan;
 import org.apache.iotdb.db.service.IService;
 import org.apache.iotdb.db.service.ServiceType;
 import org.apache.iotdb.tsfile.common.conf.TSFileConfig;
@@ -107,22 +110,25 @@ public class StatMonitor implements IService {
   }
 
   /**
-   * generate TSRecord.
+   * generate InsertPlan.
    *
    * @param hashMap key is statParams name, values is AtomicLong type
    * @param statGroupDeltaName is the deviceId seriesPath of this module
    * @param curTime current time stamp
-   * @return TSRecord contains the DataPoints of a statGroupDeltaName
+   * @return InsertPlan contains the DataPoints of a statGroupDeltaName
    */
-  public static TSRecord convertToTSRecord(Map<String, AtomicLong> hashMap,
+  public static InsertPlan convertToInsertPlan(Map<String, AtomicLong> hashMap,
       String statGroupDeltaName, long curTime) {
-    TSRecord tsRecord = new TSRecord(curTime, statGroupDeltaName);
-    tsRecord.dataPointList = new ArrayList<>();
+
+    List<String> measurements = new ArrayList<>();
+    List<String> values = new ArrayList<>();
     for (Map.Entry<String, AtomicLong> entry : hashMap.entrySet()) {
       AtomicLong value = entry.getValue();
-      tsRecord.dataPointList.add(new LongDataPoint(entry.getKey(), value.get()));
+      measurements.add(entry.getKey());
+      values.add(String.valueOf(value.get()));
     }
-    return tsRecord;
+    return new InsertPlan(statGroupDeltaName, curTime,
+        measurements.toArray(new String[0]), values.toArray(new String[0]));
   }
 
   public long getNumPointsInsert() {
@@ -218,53 +224,24 @@ public class StatMonitor implements IService {
   }
 
   /**
-   * This function is not used and need to complete the query key concept.
-   *
-   * @return TSRecord, query statistics params
-   */
-  public Map<String, TSRecord> getOneStatisticsValue(String key) {
-    // queryPath like fileNode seriesPath: root.stats.car1,
-    // or FileNodeManager seriesPath:FileNodeManager
-    String queryPath;
-    if (key.contains("\\.")) {
-      queryPath =
-          MonitorConstants.STAT_STORAGE_GROUP_PREFIX + MonitorConstants.MONITOR_PATH_SEPARATOR
-              + key.replaceAll("\\.", "_");
-    } else {
-      queryPath = key;
-    }
-    if (statisticMap.containsKey(queryPath)) {
-      return statisticMap.get(queryPath).getAllStatisticsValue();
-    } else {
-      long currentTimeMillis = System.currentTimeMillis();
-      HashMap<String, TSRecord> hashMap = new HashMap<>();
-      TSRecord tsRecord = convertToTSRecord(
-          MonitorConstants.initValues(MonitorConstants.FILENODE_PROCESSOR_CONST), queryPath,
-          currentTimeMillis);
-      hashMap.put(queryPath, tsRecord);
-      return hashMap;
-    }
-  }
-
-  /**
    * get all statistics.
    */
-  public Map<String, TSRecord> gatherStatistics() {
+  public Map<String, InsertPlan> gatherStatistics() {
     synchronized (statisticMap) {
       long currentTimeMillis = System.currentTimeMillis();
-      HashMap<String, TSRecord> tsRecordHashMap = new HashMap<>();
+      HashMap<String, InsertPlan> tsRecordHashMap = new HashMap<>();
       for (Map.Entry<String, IStatistic> entry : statisticMap.entrySet()) {
         if (entry.getValue() == null) {
           switch (entry.getKey()) {
             case MonitorConstants.STAT_STORAGE_DELTA_NAME:
               tsRecordHashMap.put(entry.getKey(),
-                  convertToTSRecord(
+                  convertToInsertPlan(
                       MonitorConstants.initValues(MonitorConstants.FILENODE_PROCESSOR_CONST),
                       entry.getKey(), currentTimeMillis));
               break;
             case MonitorConstants.FILE_SIZE_STORAGE_GROUP_NAME:
               tsRecordHashMap.put(entry.getKey(),
-                  convertToTSRecord(
+                  convertToInsertPlan(
                       MonitorConstants.initValues(MonitorConstants.FILE_SIZE_CONST),
                       entry.getKey(), currentTimeMillis));
               break;
@@ -274,8 +251,8 @@ public class StatMonitor implements IService {
           tsRecordHashMap.putAll(entry.getValue().getAllStatisticsValue());
         }
       }
-      for (TSRecord value : tsRecordHashMap.values()) {
-        value.time = currentTimeMillis;
+      for (InsertPlan value : tsRecordHashMap.values()) {
+        value.setTime(currentTimeMillis);
       }
       return tsRecordHashMap;
     }
@@ -348,12 +325,12 @@ public class StatMonitor implements IService {
         if (seconds >= statMonitorDetectFreqSec) {
           runningTimeMillis = currentTimeMillis;
           // delete time-series data
-          FileNodeManager fManager = FileNodeManager.getInstance();
+          DatabaseEngine dbEngine = DatabaseEngineFactory.getCurrent();
           try {
             for (Map.Entry<String, IStatistic> entry : statisticMap.entrySet()) {
               for (String statParamName : entry.getValue().getStatParamsHashMap().keySet()) {
                 if (temporaryStatList.contains(statParamName)) {
-                  fManager.delete(entry.getKey(), statParamName,
+                  dbEngine.deleteData(entry.getKey(), statParamName,
                       currentTimeMillis - statMonitorRetainIntervalSec * 1000);
                 }
               }
@@ -364,7 +341,7 @@ public class StatMonitor implements IService {
                     e);
           }
         }
-        Map<String, TSRecord> tsRecordHashMap = gatherStatistics();
+        Map<String, InsertPlan> tsRecordHashMap = gatherStatistics();
         insert(tsRecordHashMap);
         numBackLoop.incrementAndGet();
       } catch (Exception e) {
@@ -372,14 +349,14 @@ public class StatMonitor implements IService {
       }
     }
 
-    public void insert(Map<String, TSRecord> tsRecordHashMap) {
-      FileNodeManager fManager = FileNodeManager.getInstance();
+    public void insert(Map<String, InsertPlan> tsRecordHashMap) {
+      DatabaseEngine dbEngine = DatabaseEngineFactory.getCurrent();
       int pointNum;
-      for (Map.Entry<String, TSRecord> entry : tsRecordHashMap.entrySet()) {
+      for (Map.Entry<String, InsertPlan> entry : tsRecordHashMap.entrySet()) {
         try {
-          fManager.insert(entry.getValue(), true);
+          dbEngine.insert(entry.getValue(), true);
           numInsert.incrementAndGet();
-          pointNum = entry.getValue().dataPointList.size();
+          pointNum = entry.getValue().getValues().length;
           numPointsInsert.addAndGet(pointNum);
         } catch (StorageGroupManagerException e) {
           numInsertError.incrementAndGet();

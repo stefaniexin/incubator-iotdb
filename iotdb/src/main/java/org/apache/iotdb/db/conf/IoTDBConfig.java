@@ -183,7 +183,7 @@ public class IoTDBConfig {
   private long memThresholdDangerous = (long) (0.6 * Runtime.getRuntime().maxMemory());
   /**
    * MemMonitorThread will check every such interval(in ms). If memThresholdWarning is reached,
-   * MemMonitorThread will inform FileNodeManager to flush.
+   * MemMonitorThread will inform DataBaseEngine to flush.
    */
   private long memMonitorInterval = 1000;
   /**

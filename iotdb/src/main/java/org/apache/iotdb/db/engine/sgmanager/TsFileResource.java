@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.iotdb.db.engine.filenode;
+package org.apache.iotdb.db.engine.sgmanager;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,11 +28,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.locks.ReadWriteLock;
 import org.apache.iotdb.db.conf.directories.Directories;
-import org.apache.iotdb.db.engine.bufferwrite.RestorableTsFileIOWriter;
+import org.apache.iotdb.db.engine.tsfiledata.RestorableTsFileIOWriter;
 import org.apache.iotdb.db.engine.modification.ModificationFile;
 import org.apache.iotdb.tsfile.common.conf.TSFileConfig;
 import org.apache.iotdb.tsfile.file.metadata.ChunkGroupMetaData;
@@ -53,7 +51,7 @@ public class TsFileResource {
   private Map<String, Long> endTimeMap;
   private Set<String> mergeChanged = new HashSet<>();
 
-  private transient ModificationFile modFile;
+  private ModificationFile modFile;
 
   /**
    * @param autoRead whether read the file to initialize startTimeMap and endTimeMap

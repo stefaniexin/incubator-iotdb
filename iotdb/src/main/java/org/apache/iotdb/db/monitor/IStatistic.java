@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.iotdb.tsfile.write.record.TSRecord;
+import org.apache.iotdb.db.qp.physical.crud.InsertPlan;
 
 public interface IStatistic {
 
@@ -32,7 +32,7 @@ public interface IStatistic {
    * @return A HashMap that contains the module seriesPath like: root.stats.write.global,
    *        and its value is TSRecord format contains all statistics measurement
    */
-  Map<String, TSRecord> getAllStatisticsValue();
+  Map<String, InsertPlan> getAllStatisticsValue();
 
   /**
    * registerStatMetadata registers statistics info to the manager.

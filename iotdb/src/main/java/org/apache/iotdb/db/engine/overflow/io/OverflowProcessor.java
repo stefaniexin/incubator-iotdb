@@ -37,7 +37,7 @@ import org.apache.iotdb.db.conf.IoTDBConstant;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.engine.Processor;
 import org.apache.iotdb.db.engine.bufferwrite.Action;
-import org.apache.iotdb.db.engine.bufferwrite.FileNodeConstants;
+import org.apache.iotdb.db.engine.EngingeConstants;
 import org.apache.iotdb.db.engine.memcontrol.BasicMemController;
 import org.apache.iotdb.db.engine.memcontrol.BasicMemController.UsageLevel;
 import org.apache.iotdb.db.engine.memtable.MemSeriesLazyMerger;
@@ -113,9 +113,9 @@ public class OverflowProcessor extends Processor {
     }
     this.parentPath = overflowDirPath + processorName;
 
-    overflowFlushAction = parameters.get(FileNodeConstants.OVERFLOW_FLUSH_ACTION);
+    overflowFlushAction = parameters.get(EngingeConstants.OVERFLOW_FLUSH_ACTION);
     filenodeFlushAction = parameters
-        .get(FileNodeConstants.FILENODE_PROCESSOR_FLUSH_ACTION);
+        .get(EngingeConstants.FILENODE_PROCESSOR_FLUSH_ACTION);
 
     reopen();
 

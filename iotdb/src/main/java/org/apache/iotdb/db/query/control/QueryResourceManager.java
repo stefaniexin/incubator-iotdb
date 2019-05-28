@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.iotdb.db.engine.filenode.FileNodeManager;
+import org.apache.iotdb.db.engine.DatabaseEngineFactory;
 import org.apache.iotdb.db.engine.querycontext.SeriesDataSource;
 import org.apache.iotdb.db.engine.querycontext.OverflowSeriesDataSource;
 import org.apache.iotdb.db.engine.querycontext.QueryDataSource;
@@ -45,9 +45,9 @@ import org.apache.iotdb.tsfile.read.expression.impl.SingleSeriesExpression;
  * QueryResourceManager manages resource (file streams) used by each query job, and assign Ids to the jobs.
  * During the life cycle of a query, the following methods must be called in strict order:
  * 1. assignJobId - get an Id for the new job.
- * 2. beginQueryOfGivenQueryPaths - remind FileNodeManager that some files are being used
+ * 2. beginQueryOfGivenQueryPaths - remind DatabaseEngine that some files are being used
  * 3. (if using filter)beginQueryOfGivenExpression
- *     - remind FileNodeManager that some files are being used
+ *     - remind DatabaseEngine that some files are being used
  * 4. getQueryDataSource - open files for the job or reuse existing readers.
  * 5. endQueryForGivenJob - release the resource used by this job.
  * </p>
@@ -65,29 +65,29 @@ public class QueryResourceManager {
    * <p>
    * For example, during a query process Q1, given a query sql <sql>select device_1.sensor_1,
    * device_1.sensor_2, device_2.sensor_1, device_2.sensor_2</sql>, we will invoke
-   * <code>FileNodeManager.getInstance().beginQuery(device_1)</code> and
-   * <code>FileNodeManager.getInstance().beginQuery(device_2)</code> both once. Although there
+   * <code>DatabaseEngineFactory.getCurrent().beginQuery(device_1)</code> and
+   * <code>DatabaseEngineFactory.getCurrent().beginQuery(device_2)</code> both once. Although there
    * exists four paths, but the unique devices are only `device_1` and `device_2`. When invoking
-   * <code>FileNodeManager.getInstance().beginQuery(device_1)</code>, it returns result token `1`.
+   * <code>DatabaseEngineFactory.getCurrent().beginQuery(device_1)</code>, it returns result token `1`.
    * Similarly,
-   * <code>FileNodeManager.getInstance().beginQuery(device_2)</code> returns result token `2`.
+   * <code>DatabaseEngineFactory.getCurrent().beginQuery(device_2)</code> returns result token `2`.
    *
    * In the meanwhile, another query process Q2 aroused by other client is triggered, whose sql
-   * statement is same to Q1. Although <code>FileNodeManager.getInstance().beginQuery(device_1)
+   * statement is same to Q1. Although <code>DatabaseEngineFactory.getCurrent().beginQuery(device_1)
    * </code>
    * and
-   * <code>FileNodeManager.getInstance().beginQuery(device_2)</code> will be invoked again, it
+   * <code>DatabaseEngineFactory.getCurrent().beginQuery(device_2)</code> will be invoked again, it
    * returns result token `3` and `4` .
    *
-   * <code>FileNodeManager.getInstance().endQueryForGivenJob(device_1, 1)</code> and
-   * <code>FileNodeManager.getInstance().endQueryForGivenJob(device_2, 2)</code> must be invoked no matter how
+   * <code>DatabaseEngineFactory.getCurrent().endQueryForGivenJob(device_1, 1)</code> and
+   * <code>DatabaseEngineFactory.getCurrent().endQueryForGivenJob(device_2, 2)</code> must be invoked no matter how
    * query process Q1 exits normally or abnormally. So is Q2,
-   * <code>FileNodeManager.getInstance().endQueryForGivenJob(device_1, 3)</code> and
-   * <code>FileNodeManager.getInstance().endQueryForGivenJob(device_2, 4)</code> must be invoked
+   * <code>DatabaseEngineFactory.getCurrent().endQueryForGivenJob(device_1, 3)</code> and
+   * <code>DatabaseEngineFactory.getCurrent().endQueryForGivenJob(device_2, 4)</code> must be invoked
    *
    * Last but no least, to ensure the correctness of write process and query process of IoTDB,
-   * <code>FileNodeManager.getInstance().beginQuery()</code> and
-   * <code>FileNodeManager.getInstance().endQueryForGivenJob()</code> must be executed rightly.
+   * <code>DatabaseEngineFactory.getCurrent().beginQuery()</code> and
+   * <code>DatabaseEngineFactory.getCurrent().endQueryForGivenJob()</code> must be executed rightly.
    * </p>
    */
   private ConcurrentHashMap<Long, ConcurrentHashMap<String, List<Integer>>> queryTokensMap;
@@ -125,7 +125,7 @@ public class QueryResourceManager {
 
     for (String deviceId : deviceIdSet) {
       putQueryTokenForCurrentRequestThread(jobId, deviceId,
-          FileNodeManager.getInstance().beginQuery(deviceId));
+          DatabaseEngineFactory.getCurrent().beginQuery(deviceId));
     }
   }
 
@@ -139,7 +139,7 @@ public class QueryResourceManager {
     getUniquePaths(expression, deviceIdSet);
     for (String deviceId : deviceIdSet) {
       putQueryTokenForCurrentRequestThread(jobId, deviceId,
-          FileNodeManager.getInstance().beginQuery(deviceId));
+          DatabaseEngineFactory.getCurrent().beginQuery(deviceId));
     }
   }
 
@@ -148,7 +148,7 @@ public class QueryResourceManager {
       throws StorageGroupManagerException {
 
     SingleSeriesExpression singleSeriesExpression = new SingleSeriesExpression(selectedPath, null);
-    QueryDataSource queryDataSource = FileNodeManager.getInstance()
+    QueryDataSource queryDataSource = DatabaseEngineFactory.getCurrent()
         .query(singleSeriesExpression, context);
 
     // add used files to current thread request cached map
@@ -168,7 +168,7 @@ public class QueryResourceManager {
     }
       for (Map.Entry<String, List<Integer>> entry : queryTokensMap.get(jobId).entrySet()) {
         for (int token : entry.getValue()) {
-          FileNodeManager.getInstance().endQuery(entry.getKey(), token);
+          DatabaseEngineFactory.getCurrent().endQuery(entry.getKey(), token);
         }
       }
       queryTokensMap.remove(jobId);
@@ -198,26 +198,4 @@ public class QueryResourceManager {
     }
   }
 
-
-
-  /**
-   * TODO
-   * This is only for test TsFileProcessor now. This method will finally be replaced when
-   * fileNodeManager is refactored
-   */
-  public QueryDataSource getQueryDataSourceByTsFileProcessor(Path selectedPath,
-      QueryContext context, TsFileProcessor processor)
-      throws IOException, StorageGroupManagerException {
-    OverflowSeriesDataSource overflowSeriesDataSource = new OverflowSeriesDataSource(selectedPath);
-    overflowSeriesDataSource.setOverflowInsertFileList(Collections.EMPTY_LIST);
-
-    SingleSeriesExpression singleSeriesExpression = new SingleSeriesExpression(selectedPath, null);
-    SeriesDataSource dataSource =processor.query(singleSeriesExpression, context);
-    QueryDataSource queryDataSource = new QueryDataSource(dataSource, overflowSeriesDataSource);
-    // add used files to current thread request cached map
-    filePathsManager.addUsedFilesForGivenJob(context.getJobId(), queryDataSource);
-
-    return queryDataSource;
-
-  }
 }

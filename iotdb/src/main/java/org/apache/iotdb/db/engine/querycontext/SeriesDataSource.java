@@ -19,7 +19,7 @@
 package org.apache.iotdb.db.engine.querycontext;
 
 import java.util.List;
-import org.apache.iotdb.db.engine.filenode.TsFileResource;
+import org.apache.iotdb.db.engine.sgmanager.TsFileResource;
 import org.apache.iotdb.tsfile.read.common.Path;
 
 public class SeriesDataSource {

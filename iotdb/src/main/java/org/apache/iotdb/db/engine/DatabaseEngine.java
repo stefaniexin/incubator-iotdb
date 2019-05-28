@@ -21,7 +21,7 @@ package org.apache.iotdb.db.engine;
 
 import java.util.List;
 import java.util.Map;
-import org.apache.iotdb.db.engine.filenode.TsFileResource;
+import org.apache.iotdb.db.engine.sgmanager.TsFileResource;
 import org.apache.iotdb.db.engine.memcontrol.BasicMemController;
 import org.apache.iotdb.db.engine.querycontext.QueryDataSource;
 import org.apache.iotdb.db.exception.StorageGroupManagerException;
@@ -32,6 +32,7 @@ import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSEncoding;
 import org.apache.iotdb.tsfile.read.common.Path;
 import org.apache.iotdb.tsfile.read.expression.impl.SingleSeriesExpression;
+import org.apache.iotdb.tsfile.write.record.TSRecord;
 
 /**
  * DatabaseEngine is an abstraction of IoTDB storage-level interfaces.
@@ -136,7 +137,7 @@ public interface DatabaseEngine {
   /**
    * delete one storage group.
    */
-  void deleteOneStorageGroup(String processorName) throws StorageGroupManagerException;
+  void deleteStorageGroup(String processorName) throws StorageGroupManagerException;
 
   /**
    * add time series.

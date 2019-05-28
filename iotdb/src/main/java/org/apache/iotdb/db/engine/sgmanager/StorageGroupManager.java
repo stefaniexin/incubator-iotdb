@@ -37,7 +37,6 @@ import org.apache.iotdb.db.conf.IoTDBConstant;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.conf.directories.Directories;
 import org.apache.iotdb.db.engine.DatabaseEngine;
-import org.apache.iotdb.db.engine.filenode.TsFileResource;
 import org.apache.iotdb.db.engine.memcontrol.BasicMemController;
 import org.apache.iotdb.db.engine.querycontext.QueryDataSource;
 import org.apache.iotdb.db.exception.PathErrorException;
@@ -142,10 +141,10 @@ public class StorageGroupManager implements IStatistic, IService, DatabaseEngine
   }
 
   @Override
-  public Map<String, TSRecord> getAllStatisticsValue() {
+  public Map<String, InsertPlan> getAllStatisticsValue() {
     long curTime = System.currentTimeMillis();
     TSRecord tsRecord = StatMonitor
-        .convertToTSRecord(getStatParamsHashMap(), MonitorConstants.STAT_STORAGE_DELTA_NAME,
+        .convertToInsertPlan(getStatParamsHashMap(), MonitorConstants.STAT_STORAGE_DELTA_NAME,
             curTime);
     HashMap<String, TSRecord> ret = new HashMap<>();
     ret.put(MonitorConstants.STAT_STORAGE_DELTA_NAME, tsRecord);
@@ -603,7 +602,7 @@ public class StorageGroupManager implements IStatistic, IService, DatabaseEngine
   }
 
   @Override
-  public void deleteOneStorageGroup(String processorName) throws StorageGroupManagerException {
+  public void deleteStorageGroup(String processorName) throws StorageGroupManagerException {
     if (storageGroupManagerStatus != StorageGroupManagerStatus.NONE) {
       return;
     }

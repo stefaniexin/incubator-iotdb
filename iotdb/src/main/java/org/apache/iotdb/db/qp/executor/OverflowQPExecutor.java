@@ -31,7 +31,8 @@ import org.apache.iotdb.db.auth.entity.PathPrivilege;
 import org.apache.iotdb.db.auth.entity.PrivilegeType;
 import org.apache.iotdb.db.auth.entity.Role;
 import org.apache.iotdb.db.auth.entity.User;
-import org.apache.iotdb.db.engine.filenode.FileNodeManager;
+import org.apache.iotdb.db.engine.DatabaseEngine;
+import org.apache.iotdb.db.engine.DatabaseEngineFactory;
 import org.apache.iotdb.db.exception.ArgsErrorException;
 import org.apache.iotdb.db.exception.StorageGroupManagerException;
 import org.apache.iotdb.db.exception.PathErrorException;
@@ -63,8 +64,6 @@ import org.apache.iotdb.tsfile.read.common.Path;
 import org.apache.iotdb.tsfile.read.expression.IExpression;
 import org.apache.iotdb.tsfile.read.query.dataset.QueryDataSet;
 import org.apache.iotdb.tsfile.utils.Pair;
-import org.apache.iotdb.tsfile.write.record.TSRecord;
-import org.apache.iotdb.tsfile.write.record.datapoint.DataPoint;
 import org.apache.iotdb.tsfile.write.schema.MeasurementSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,11 +72,11 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
 
   private static final Logger LOG = LoggerFactory.getLogger(OverflowQPExecutor.class);
 
-  private FileNodeManager fileNodeManager;
+  private DatabaseEngine databaseEngine;
   private MManager mManager = MManager.getInstance();
 
   public OverflowQPExecutor() {
-    fileNodeManager = FileNodeManager.getInstance();
+    databaseEngine = DatabaseEngineFactory.getCurrent();
   }
 
   public static String checkValue(TSDataType dataType, String value) throws ProcessorException {
@@ -117,9 +116,8 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
         return flag;
       case INSERT:
         InsertPlan insert = (InsertPlan) plan;
-        int result = multiInsert(insert.getDeviceId(), insert.getTime(), insert.getMeasurements(),
-            insert.getValues());
-        return result > 0;
+        multiInsert(insert);
+        return true;
       case CREATE_ROLE:
       case DELETE_ROLE:
       case CREATE_USER:
@@ -215,7 +213,7 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
       mManager.getStorageGroupByPath(fullPath);
       TSDataType dataType = mManager.getSeriesType(fullPath);
       value = checkValue(dataType, value);
-      fileNodeManager.update(deviceId, measurementId, startTime, endTime, dataType, value);
+      databaseEngine.update(deviceId, measurementId, startTime, endTime, dataType, value);
       return true;
     } catch (PathErrorException e) {
       throw new ProcessorException(e.getMessage());
@@ -235,7 +233,7 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
             String.format("Timeseries %s does not exist.", path.getFullPath()));
       }
       mManager.getStorageGroupByPath(path.getFullPath());
-      fileNodeManager.delete(deviceId, measurementId, timestamp);
+      databaseEngine.deleteData(deviceId, measurementId, timestamp);
       return true;
     } catch (PathErrorException | StorageGroupManagerException e) {
       throw new ProcessorException(e);
@@ -243,30 +241,12 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
   }
 
   @Override
-  public void insert(Path path, long timestamp, String value) throws ProcessorException {
-    String deviceId = path.getDevice();
-    String measurementId = path.getMeasurement();
-
-    try {
-      TSDataType type = mManager.getSeriesType(deviceId + "," + measurementId);
-      TSRecord tsRecord = new TSRecord(timestamp, deviceId);
-      DataPoint dataPoint = DataPoint.getDataPoint(type, measurementId, value);
-      tsRecord.addTuple(dataPoint);
-      fileNodeManager.insert(tsRecord, false);
-
-    } catch (PathErrorException e) {
-      throw new ProcessorException("Error in insert: " + e.getMessage());
-    } catch (StorageGroupManagerException e) {
-      throw new ProcessorException(e);
-    }
-  }
-
-  @Override
-  public int multiInsert(String deviceId, long insertTime, String[] measurementList,
-      String[] insertValues)
+  public void multiInsert(InsertPlan plan)
       throws ProcessorException {
     try {
-      TSRecord tsRecord = new TSRecord(insertTime, deviceId);
+      String deviceId = plan.getDeviceId();
+      String[] measurementList = plan.getMeasurements();
+      String[] insertValues = plan.getValues();
 
       MNode node = mManager.getNodeByDeviceIdFromCache(deviceId);
 
@@ -284,12 +264,9 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
         }
 
         TSDataType dataType = measurementNode.getSchema().getType();
-        String value = insertValues[i];
-        value = checkValue(dataType, value);
-        DataPoint dataPoint = DataPoint.getDataPoint(dataType, measurementList[i], value);
-        tsRecord.addTuple(dataPoint);
+        insertValues[i] = checkValue(dataType, insertValues[i]);
       }
-      return fileNodeManager.insert(tsRecord, false);
+      databaseEngine.insert(plan, false);
 
     } catch (PathErrorException | StorageGroupManagerException e) {
       throw new ProcessorException(e.getMessage());
@@ -535,11 +512,11 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
             try {
               if (isNewMeasurement) {
                 // add time series to schema
-                fileNodeManager.addTimeSeries(path, dataType, encoding, compressor, props);
-                //TODO fileNodeManager.addTimeSeries(
+                databaseEngine.addTimeSeries(path, dataType, encoding, compressor, props);
+                //TODO databaseEngine.addTimeSeries(
                 //TODO path, resultDataType, encoding, compressor, encodingArgs);
               }
-              // fileNodeManager.closeOneFileNode(namespacePath);
+              // databaseEngine.closeOneFileNode(namespacePath);
             } catch (StorageGroupManagerException e) {
               throw new ProcessorException(e);
             }
@@ -613,10 +590,10 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
             closeFileNodes.removeAll(deleteFielNodes);
             for (String deleteFileNode : deleteFielNodes) {
               // close processor
-              fileNodeManager.deleteOneFileNode(deleteFileNode);
+              databaseEngine.deleteStorageGroup(deleteFileNode);
             }
             for (String closeFileNode : closeFileNodes) {
-              fileNodeManager.closeOneFileNode(closeFileNode);
+              databaseEngine.closeStorageGroup(closeFileNode);
             }
           }
           break;

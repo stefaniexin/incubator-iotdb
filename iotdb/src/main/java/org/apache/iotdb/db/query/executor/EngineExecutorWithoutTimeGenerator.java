@@ -92,7 +92,8 @@ public class EngineExecutorWithoutTimeGenerator {
       PriorityMergeReader unSeqMergeReader;
       try {
         unSeqMergeReader = SeriesReaderFactory.getInstance()
-            .createUnSeqMergeReader(queryDataSource.getOverflowSeriesDataSource(), timeFilter);
+            .createUnSeqMergeReader(queryDataSource.getOverflowSeriesDataSource(),
+                context, timeFilter);
       } catch (IOException e) {
         throw new StorageGroupManagerException(e);
       }
@@ -146,62 +147,8 @@ public class EngineExecutorWithoutTimeGenerator {
       PriorityMergeReader unSeqMergeReader;
       try {
         unSeqMergeReader = SeriesReaderFactory.getInstance()
-            .createUnSeqMergeReader(queryDataSource.getOverflowSeriesDataSource(), null);
-      } catch (IOException e) {
-        throw new StorageGroupManagerException(e);
-      }
-
-      // merge sequence data with unsequence data.
-      readersOfSelectedSeries.add(new AllDataReader(tsFilesReader, unSeqMergeReader));
-    }
-
-    try {
-      return new EngineDataSetWithoutTimeGenerator(queryExpression.getSelectedSeries(), dataTypes,
-          readersOfSelectedSeries);
-    } catch (IOException e) {
-      throw new StorageGroupManagerException(e);
-    }
-  }
-  /**
-   * TODO
-   * This is only for test TsFileProcessor now. This method will finally be replaced when
-   * fileNodeManager is refactored
-   */
-  public QueryDataSet executeWithoutFilter(QueryContext context, TsFileProcessor processor)
-      throws StorageGroupManagerException, IOException {
-
-    List<IPointReader> readersOfSelectedSeries = new ArrayList<>();
-    List<TSDataType> dataTypes = new ArrayList<>();
-
-    QueryResourceManager.getInstance()
-        .beginQueryOfGivenQueryPaths(context.getJobId(), queryExpression.getSelectedSeries());
-
-    for (Path path : queryExpression.getSelectedSeries()) {
-
-      QueryDataSource queryDataSource = QueryResourceManager.getInstance()
-          .getQueryDataSourceByTsFileProcessor(path, context, processor);
-
-      // add data type
-      try {
-        dataTypes.add(MManager.getInstance().getSeriesType(path.getFullPath()));
-      } catch (PathErrorException e) {
-        throw new StorageGroupManagerException(e);
-      }
-
-      // sequence insert data
-      SequenceDataReader tsFilesReader;
-      try {
-        tsFilesReader = new SequenceDataReader(queryDataSource.getSeqDataSource(),
-            null, context);
-      } catch (IOException e) {
-        throw new StorageGroupManagerException(e);
-      }
-
-      // unseq insert data
-      PriorityMergeReader unSeqMergeReader;
-      try {
-        unSeqMergeReader = SeriesReaderFactory.getInstance()
-            .createUnSeqMergeReader(queryDataSource.getOverflowSeriesDataSource(), null);
+            .createUnSeqMergeReader(queryDataSource.getOverflowSeriesDataSource(), context,
+                null);
       } catch (IOException e) {
         throw new StorageGroupManagerException(e);
       }
