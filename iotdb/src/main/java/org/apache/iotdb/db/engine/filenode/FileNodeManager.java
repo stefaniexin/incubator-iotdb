@@ -51,6 +51,7 @@ import org.apache.iotdb.db.metadata.MManager;
 import org.apache.iotdb.db.monitor.IStatistic;
 import org.apache.iotdb.db.monitor.MonitorConstants;
 import org.apache.iotdb.db.monitor.MonitorConstants.StorageGroupManagerStatConstants;
+import org.apache.iotdb.db.monitor.MonitorConstants.StorageGroupProcessorStatConstants;
 import org.apache.iotdb.db.monitor.StatMonitor;
 import org.apache.iotdb.db.qp.physical.crud.DeletePlan;
 import org.apache.iotdb.db.qp.physical.crud.InsertPlan;
@@ -301,10 +302,10 @@ public class FileNodeManager implements IStatistic, IService {
     // Modify the insert
     if (!isMonitor) {
       fileNodeProcessor.getStatParamsHashMap()
-          .get(MonitorConstants.FileNodeProcessorStatConstants.TOTAL_POINTS_SUCCESS.name())
+          .get(StorageGroupProcessorStatConstants.TOTAL_POINTS_SUCCESS.name())
           .addAndGet(tsRecord.dataPointList.size());
       fileNodeProcessor.getStatParamsHashMap()
-          .get(MonitorConstants.FileNodeProcessorStatConstants.TOTAL_REQ_SUCCESS.name())
+          .get(StorageGroupProcessorStatConstants.TOTAL_REQ_SUCCESS.name())
           .incrementAndGet();
       statParamsHashMap.get(StorageGroupManagerStatConstants.TOTAL_REQ_SUCCESS.name())
           .incrementAndGet();

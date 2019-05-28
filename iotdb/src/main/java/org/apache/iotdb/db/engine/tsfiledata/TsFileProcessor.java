@@ -923,14 +923,14 @@ public class TsFileProcessor extends Processor {
    * @param appendFile the appended tsfile information
    */
   public List<String> getOverlapFiles(TsFileResource appendFile, String uuid)
-      throws FileNodeProcessorException {
+      throws TsFileProcessorException {
     List<String> overlapFiles = new ArrayList<>();
     try {
       for (TsFileResource tsFileResource : tsFileResources) {
         getOverlapFile(appendFile, tsFileResource, uuid, overlapFiles);
       }
     } catch (IOException e) {
-      throw new FileNodeProcessorException(String.format("Failed to get tsfiles "
+      throw new TsFileProcessorException(String.format("Failed to get tsfiles "
           + "which overlap with the appendFile: %s.", appendFile.getFilePath()), e);
     }
     return overlapFiles;

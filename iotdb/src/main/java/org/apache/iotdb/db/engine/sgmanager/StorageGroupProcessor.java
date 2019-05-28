@@ -49,7 +49,6 @@ import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.conf.directories.Directories;
 import org.apache.iotdb.db.engine.Processor;
 import org.apache.iotdb.db.engine.bufferwrite.FileNodeConstants;
-import org.apache.iotdb.db.engine.filenode.FileNodeProcessorStatus;
 import org.apache.iotdb.db.engine.filenode.TsFileResource;
 import org.apache.iotdb.db.engine.merge.MergeTask;
 import org.apache.iotdb.db.engine.modification.Deletion;
@@ -68,6 +67,7 @@ import org.apache.iotdb.db.exception.TsFileProcessorException;
 import org.apache.iotdb.db.metadata.MManager;
 import org.apache.iotdb.db.monitor.IStatistic;
 import org.apache.iotdb.db.monitor.MonitorConstants;
+import org.apache.iotdb.db.monitor.MonitorConstants.StorageGroupProcessorStatConstants;
 import org.apache.iotdb.db.monitor.StatMonitor;
 import org.apache.iotdb.db.qp.physical.crud.InsertPlan;
 import org.apache.iotdb.db.qp.physical.crud.UpdatePlan;
@@ -286,8 +286,8 @@ public class StorageGroupProcessor extends Processor implements IStatistic {
   @Override
   public void registerStatMetadata() {
     Map<String, String> hashMap = new HashMap<>();
-    for (MonitorConstants.FileNodeProcessorStatConstants statConstant :
-        MonitorConstants.FileNodeProcessorStatConstants.values()) {
+    for (StorageGroupProcessorStatConstants statConstant :
+        StorageGroupProcessorStatConstants.values()) {
       hashMap
           .put(statStorageGroupName + MonitorConstants.MONITOR_PATH_SEPARATOR + statConstant.name(),
               MonitorConstants.DATA_TYPE_INT64);
@@ -298,8 +298,8 @@ public class StorageGroupProcessor extends Processor implements IStatistic {
   @Override
   public List<String> getAllPathForStatistic() {
     List<String> list = new ArrayList<>();
-    for (MonitorConstants.FileNodeProcessorStatConstants statConstant :
-        MonitorConstants.FileNodeProcessorStatConstants.values()) {
+    for (StorageGroupProcessorStatConstants statConstant :
+        StorageGroupProcessorStatConstants.values()) {
       list.add(
           statStorageGroupName + MonitorConstants.MONITOR_PATH_SEPARATOR + statConstant.name());
     }
@@ -490,7 +490,7 @@ public class StorageGroupProcessor extends Processor implements IStatistic {
    * @param appendFile the appended tsfile information
    */
   public List<String> getOverlapFiles(TsFileResource appendFile, String uuid)
-      throws FileNodeProcessorException {
+      throws TsFileProcessorException {
     return tsFileProcessor.getOverlapFiles(appendFile, uuid);
   }
 

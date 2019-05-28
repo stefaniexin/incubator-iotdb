@@ -60,7 +60,7 @@ public class MonitorConstants {
     HashMap<String, AtomicLong> hashMap = new HashMap<>();
     switch (constantsType) {
       case FILENODE_PROCESSOR_CONST:
-        for (FileNodeProcessorStatConstants statConstant : FileNodeProcessorStatConstants
+        for (StorageGroupProcessorStatConstants statConstant : StorageGroupProcessorStatConstants
             .values()) {
           hashMap.put(statConstant.name(), new AtomicLong(0));
         }
@@ -84,7 +84,7 @@ public class MonitorConstants {
     TOTAL_POINTS, TOTAL_REQ_SUCCESS, TOTAL_REQ_FAIL, TOTAL_POINTS_SUCCESS, TOTAL_POINTS_FAIL
   }
 
-  public enum FileNodeProcessorStatConstants {
+  public enum StorageGroupProcessorStatConstants {
     TOTAL_REQ_SUCCESS, TOTAL_REQ_FAIL, TOTAL_POINTS_SUCCESS, TOTAL_POINTS_FAIL
   }
 

@@ -76,6 +76,7 @@ import org.apache.iotdb.db.exception.TsFileProcessorException;
 import org.apache.iotdb.db.metadata.MManager;
 import org.apache.iotdb.db.monitor.IStatistic;
 import org.apache.iotdb.db.monitor.MonitorConstants;
+import org.apache.iotdb.db.monitor.MonitorConstants.StorageGroupProcessorStatConstants;
 import org.apache.iotdb.db.monitor.StatMonitor;
 import org.apache.iotdb.db.query.context.QueryContext;
 import org.apache.iotdb.db.query.control.FileReaderManager;
@@ -246,8 +247,8 @@ public class FileNodeProcessor extends Processor implements IStatistic {
   FileNodeProcessor(String fileNodeDirPath, String processorName)
       throws FileNodeProcessorException {
     super(processorName);
-    for (MonitorConstants.FileNodeProcessorStatConstants statConstant :
-        MonitorConstants.FileNodeProcessorStatConstants.values()) {
+    for (StorageGroupProcessorStatConstants statConstant :
+        StorageGroupProcessorStatConstants.values()) {
       statParamsHashMap.put(statConstant.name(), new AtomicLong(0));
     }
     statStorageDeltaName =
@@ -327,8 +328,8 @@ public class FileNodeProcessor extends Processor implements IStatistic {
   @Override
   public void registerStatMetadata() {
     Map<String, String> hashMap = new HashMap<>();
-    for (MonitorConstants.FileNodeProcessorStatConstants statConstant :
-        MonitorConstants.FileNodeProcessorStatConstants.values()) {
+    for (StorageGroupProcessorStatConstants statConstant :
+        StorageGroupProcessorStatConstants.values()) {
       hashMap
           .put(statStorageDeltaName + MonitorConstants.MONITOR_PATH_SEPARATOR + statConstant.name(),
               MonitorConstants.DATA_TYPE_INT64);
@@ -339,8 +340,8 @@ public class FileNodeProcessor extends Processor implements IStatistic {
   @Override
   public List<String> getAllPathForStatistic() {
     List<String> list = new ArrayList<>();
-    for (MonitorConstants.FileNodeProcessorStatConstants statConstant :
-        MonitorConstants.FileNodeProcessorStatConstants.values()) {
+    for (StorageGroupProcessorStatConstants statConstant :
+        StorageGroupProcessorStatConstants.values()) {
       list.add(
           statStorageDeltaName + MonitorConstants.MONITOR_PATH_SEPARATOR + statConstant.name());
     }

@@ -37,7 +37,7 @@ import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.StartupException;
 import org.apache.iotdb.db.metadata.MManager;
 import org.apache.iotdb.db.monitor.MonitorConstants.StorageGroupManagerStatConstants;
-import org.apache.iotdb.db.monitor.MonitorConstants.FileNodeProcessorStatConstants;
+import org.apache.iotdb.db.monitor.MonitorConstants.StorageGroupProcessorStatConstants;
 import org.apache.iotdb.db.monitor.collector.FileSize;
 import org.apache.iotdb.db.service.IService;
 import org.apache.iotdb.db.service.ServiceType;
@@ -97,7 +97,7 @@ public class StatMonitor implements IService {
     for (StorageGroupManagerStatConstants constants : StorageGroupManagerStatConstants.values()) {
       temporaryStatList.add(constants.name());
     }
-    for (FileNodeProcessorStatConstants constants : FileNodeProcessorStatConstants.values()) {
+    for (StorageGroupProcessorStatConstants constants : StorageGroupProcessorStatConstants.values()) {
       temporaryStatList.add(constants.name());
     }
   }
