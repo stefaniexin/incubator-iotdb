@@ -195,7 +195,7 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
 
       clearAllStatusForCurrentRequest();
     } catch (Exception e) {
-      LOGGER.error("Error in closeOperation : {}", e.getMessage());
+      LOGGER.error("Error in closeOperation : ", e);
     }
     return new TSCloseOperationResp(new TS_Status(TS_StatusCode.SUCCESS_STATUS));
   }
@@ -471,6 +471,7 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
               "Fail to generate physcial plan and execute for statement "
                   + "%s beacuse %s",
               statement, e.getMessage());
+          LOGGER.warn("Error occurred when executing {}", statement, e);
           result.add(Statement.EXECUTE_FAILED);
           isAllSuccessful = false;
           batchErrorMessage.append(String.format(ERROR_MESSAGE_FORMAT_IN_BATCH, i, errMessage));
@@ -513,6 +514,7 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
               "Execute set consistency level successfully");
         }
       } catch (Exception e) {
+        LOGGER.error("Error occurred when executing statement {}", statement, e);
         return getTSExecuteStatementResp(TS_StatusCode.ERROR_STATUS, e.getMessage());
       }
 
@@ -521,11 +523,11 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
         physicalPlan = processor.parseSQLToPhysicalPlan(statement, zoneIds.get());
         physicalPlan.setProposer(username.get());
       } catch (IllegalASTFormatException e) {
-        LOGGER.debug("meet error while parsing SQL to physical plan: {}", e.getMessage());
+        LOGGER.debug("meet error while parsing SQL to physical plan: ", e);
         return getTSExecuteStatementResp(TS_StatusCode.ERROR_STATUS,
             "Statement format is not right:" + e.getMessage());
       } catch (NullPointerException e) {
-        LOGGER.error("meet error while parsing SQL to physical plan.", e);
+        LOGGER.error("meet error while parsing SQL to physical plan: ", e);
         return getTSExecuteStatementResp(TS_StatusCode.ERROR_STATUS, "Statement is not allowed");
       }
       if (physicalPlan.isQuery()) {
@@ -534,8 +536,7 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
         return executeUpdateStatement(physicalPlan);
       }
     } catch (Exception e) {
-      LOGGER.info("meet error: {}  while executing statement: {}", e.getMessage(),
-          req.getStatement());
+      LOGGER.info("meet error while executing statement: {}", req.getStatement(), e);
       return getTSExecuteStatementResp(TS_StatusCode.ERROR_STATUS, e.getMessage());
     }
   }
@@ -763,7 +764,7 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
     try {
       execRet = executeNonQuery(plan);
     } catch (ProcessorException e) {
-      LOGGER.debug("meet error while processing non-query. {}", e.getMessage());
+      LOGGER.debug("meet error while processing non-query. ", e);
       return getTSExecuteStatementResp(TS_StatusCode.ERROR_STATUS, e.getMessage());
     }
     TS_StatusCode statusCode = execRet ? TS_StatusCode.SUCCESS_STATUS : TS_StatusCode.ERROR_STATUS;
