@@ -20,13 +20,12 @@ package org.apache.iotdb.db.engine.memcontrol;
 
 import org.apache.iotdb.db.concurrent.ThreadName;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
-import org.apache.iotdb.db.engine.filenode.FileNodeManager;
 import org.apache.iotdb.db.utils.MemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This class only gives a hint to FilenodeManager that it may flush some data to avoid rush hour.
+ * This class only gives a hint to StorageGroupManager that it may flush some data to avoid rush hour.
  */
 public class FlushPartialPolicy implements Policy {
 
