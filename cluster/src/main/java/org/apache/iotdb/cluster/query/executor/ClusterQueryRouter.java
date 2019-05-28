@@ -108,6 +108,9 @@ public class ClusterQueryRouter extends AbstractQueryRouter {
       if (expression != null) {
         IExpression optimizedExpression = ExpressionOptimizer.getInstance()
             .optimize(expression, selectedSeries);
+        // update query expression of origin query plan, it's necessary.
+        queryManager.getOriginQueryPlan().setExpression(optimizedExpression);
+
         AggregateEngineExecutor engineExecutor = new ClusterAggregateEngineExecutor(
             selectedSeries, aggres, optimizedExpression, queryManager);
         if (optimizedExpression.getType() == ExpressionType.GLOBAL_TIME) {
@@ -166,6 +169,9 @@ public class ClusterQueryRouter extends AbstractQueryRouter {
 
     IExpression optimizedExpression = ExpressionOptimizer.getInstance()
         .optimize(expression, selectedSeries);
+    // update query expression of origin query plan, it's necessary.
+    queryManager.getOriginQueryPlan().setExpression(optimizedExpression);
+
     try {
       if (optimizedExpression.getType() == ExpressionType.GLOBAL_TIME) {
         queryManager.initQueryResource(QueryType.GLOBAL_TIME, getReadDataConsistencyLevel());
