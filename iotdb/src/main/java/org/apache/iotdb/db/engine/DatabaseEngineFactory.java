@@ -17,11 +17,13 @@
  * under the License.
  */
 
-package org.apache.iotdb.db.engine.sgmanager;
+package org.apache.iotdb.db.engine;
 
-public class StorageEngineFactory {
+import org.apache.iotdb.db.engine.sgmanager.StorageGroupManager;
 
-  public static StorageEngine getCurrent() {
+public class DatabaseEngineFactory {
+
+  public static DatabaseEngine getCurrent() {
     return StorageGroupManager.getInstance();
   }
 }

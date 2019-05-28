@@ -36,6 +36,7 @@ import org.apache.iotdb.db.conf.IoTDBConfig;
 import org.apache.iotdb.db.conf.IoTDBConstant;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.conf.directories.Directories;
+import org.apache.iotdb.db.engine.DatabaseEngine;
 import org.apache.iotdb.db.engine.filenode.TsFileResource;
 import org.apache.iotdb.db.engine.memcontrol.BasicMemController;
 import org.apache.iotdb.db.engine.querycontext.QueryDataSource;
@@ -67,7 +68,7 @@ import org.slf4j.LoggerFactory;
  * StorageGroupManager provides top-level interfaces to access IoTDB storage engine. It decides
  * which StorageGroup(s) to access in order to complete a query.
  */
-public class StorageGroupManager implements IStatistic, IService, StorageEngine {
+public class StorageGroupManager implements IStatistic, IService, DatabaseEngine {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(StorageGroupManager.class);
   private static final IoTDBConfig TsFileDBConf = IoTDBDescriptor.getInstance().getConfig();

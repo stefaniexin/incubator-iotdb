@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.iotdb.db.engine.sgmanager;
+package org.apache.iotdb.db.engine;
 
 import java.util.List;
 import java.util.Map;
@@ -34,9 +34,9 @@ import org.apache.iotdb.tsfile.read.common.Path;
 import org.apache.iotdb.tsfile.read.expression.impl.SingleSeriesExpression;
 
 /**
- * StorageEngine is an abstraction of IoTDB storage-level interfaces.
+ * DatabaseEngine is an abstraction of IoTDB storage-level interfaces.
  */
-public interface StorageEngine {
+public interface DatabaseEngine {
 
   /**
    * This function is just for unit test.
