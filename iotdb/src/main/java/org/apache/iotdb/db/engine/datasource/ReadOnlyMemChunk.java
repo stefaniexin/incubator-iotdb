@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.iotdb.db.engine.querycontext;
+package org.apache.iotdb.db.engine.datasource;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -42,7 +42,7 @@ public class ReadOnlyMemChunk implements TimeValuePairSorter {
   private TimeValuePairSorter memSeries;
   private List<TimeValuePair> sortedTimeValuePairList;
 
-  Map<String, String> props;
+  private Map<String, String> props;
   private int floatPrecision = TSFileConfig.floatPrecision;
 
   /**
@@ -158,5 +158,9 @@ public class ReadOnlyMemChunk implements TimeValuePairSorter {
   public boolean isEmpty() {
     checkInitialized();
     return sortedTimeValuePairList.isEmpty();
+  }
+
+  public Map<String, String> getProps() {
+    return props;
   }
 }

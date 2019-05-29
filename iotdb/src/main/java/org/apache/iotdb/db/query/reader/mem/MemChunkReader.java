@@ -20,7 +20,7 @@
 package org.apache.iotdb.db.query.reader.mem;
 
 import java.util.Iterator;
-import org.apache.iotdb.db.engine.querycontext.ReadOnlyMemChunk;
+import org.apache.iotdb.db.engine.datasource.ReadOnlyMemChunk;
 import org.apache.iotdb.db.query.reader.IAggregateReader;
 import org.apache.iotdb.db.query.reader.IBatchReader;
 import org.apache.iotdb.db.query.reader.IPointReader;

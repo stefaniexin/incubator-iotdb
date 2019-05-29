@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.iotdb.db.conf.directories.Directories;
 import org.apache.iotdb.db.engine.EngingeConstants;
 import org.apache.iotdb.db.engine.MetadataManagerHelper;
-import org.apache.iotdb.db.engine.querycontext.ReadOnlyMemChunk;
+import org.apache.iotdb.db.engine.datasource.ReadOnlyMemChunk;
 import org.apache.iotdb.db.engine.version.SysTimeVersionController;
 import org.apache.iotdb.db.exception.BufferWriteProcessorException;
 import org.apache.iotdb.db.utils.EnvironmentUtils;

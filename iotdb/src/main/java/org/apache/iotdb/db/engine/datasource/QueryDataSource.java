@@ -16,36 +16,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.iotdb.db.engine.querycontext;
+package org.apache.iotdb.db.engine.datasource;
 
-import java.util.List;
-import org.apache.iotdb.tsfile.file.metadata.ChunkMetaData;
+public class QueryDataSource {
 
-public class OverflowInsertFile {
+  // sequence data source
+  private SeriesDataSource seriesDataSource;
 
-  private String filePath;
+  // unSequence data source
+  private SeriesDataSource overflowSeriesDataSource;
 
-  // seriesChunkMetadata of selected series
-  private List<ChunkMetaData> timeSeriesChunkMetaData;
-
-  public OverflowInsertFile() {
-    //allowed to do nothing
+  public QueryDataSource(SeriesDataSource seriesDataSource,
+      SeriesDataSource overflowSeriesDataSource) {
+    this.seriesDataSource = seriesDataSource;
+    this.overflowSeriesDataSource = overflowSeriesDataSource;
   }
 
-  public OverflowInsertFile(String path, List<ChunkMetaData> timeSeriesChunkMetaData) {
-    this.filePath = path;
-    this.timeSeriesChunkMetaData = timeSeriesChunkMetaData;
+  public SeriesDataSource getSeqDataSource() {
+    return seriesDataSource;
   }
 
-  public String getFilePath() {
-    return filePath;
-  }
-
-  public List<ChunkMetaData> getChunkMetaDataList() {
-    return timeSeriesChunkMetaData;
-  }
-
-  public void setTimeSeriesChunkMetaData(List<ChunkMetaData> timeSeriesChunkMetaData) {
-    this.timeSeriesChunkMetaData = timeSeriesChunkMetaData;
+  public SeriesDataSource getOverflowSeriesDataSource() {
+    return overflowSeriesDataSource;
   }
 }

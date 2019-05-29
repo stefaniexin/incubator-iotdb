@@ -21,7 +21,7 @@ package org.apache.iotdb.db.engine.memtable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.apache.iotdb.db.engine.querycontext.ReadOnlyMemChunk;
+import org.apache.iotdb.db.engine.datasource.ReadOnlyMemChunk;
 import org.apache.iotdb.db.utils.TimeValuePair;
 
 public class MemSeriesLazyMerger implements TimeValuePairSorter {

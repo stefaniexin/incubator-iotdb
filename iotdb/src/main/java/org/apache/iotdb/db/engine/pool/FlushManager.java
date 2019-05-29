@@ -35,11 +35,10 @@ public class FlushManager {
   private static final int EXIT_WAIT_TIME = 60 * 1000;
 
   private ExecutorService pool;
-  private int threadCnt;
 
   private FlushManager() {
     IoTDBConfig config = IoTDBDescriptor.getInstance().getConfig();
-    this.threadCnt = config.getConcurrentFlushThread();
+    int threadCnt = config.getConcurrentFlushThread();
     pool = IoTDBThreadPoolFactory.newFixedThreadPool(threadCnt, ThreadName.FLUSH_SERVICE.getName());
   }
 
@@ -47,47 +46,6 @@ public class FlushManager {
     return InstanceHolder.instance;
   }
 
-  /**
-   * @throws ProcessorException
-   *             if the pool is not terminated.
-   */
-  public void reopen() throws ProcessorException {
-    if (!pool.isTerminated()) {
-      throw new ProcessorException("Flush Pool is not terminated!");
-    }
-    IoTDBConfig config = IoTDBDescriptor.getInstance().getConfig();
-    pool = Executors.newFixedThreadPool(config.getConcurrentFlushThread());
-  }
-
-  public FlushManager(ExecutorService pool) {
-    this.pool = pool;
-  }
-
-  /**
-   * Refuse new flush submits and exit when all RUNNING THREAD in the pool end.
-   *
-   * @param block
-   *            if set to true, this method will wait for timeOut milliseconds.
-   * @param timeOut
-   *            block time out in milliseconds.
-   * @throws ProcessorException
-   *             if timeOut is reached or being interrupted while waiting to exit.
-   */
-  public void forceClose(boolean block, long timeOut) throws ProcessorException {
-    pool.shutdownNow();
-    if (block) {
-      try {
-        if (!pool.awaitTermination(timeOut, TimeUnit.MILLISECONDS)) {
-          throw new ProcessorException("Flush thread pool doesn't exit after "
-              + EXIT_WAIT_TIME + " ms");
-        }
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new ProcessorException("Interrupted while waiting flush thread pool to exit. "
-            , e);
-      }
-    }
-  }
 
   /**
    * Block new flush submits and exit when all RUNNING THREADS AND TASKS IN THE QUEUE end.
@@ -114,20 +72,8 @@ public class FlushManager {
     }
   }
 
-  public synchronized Future<?> submit(Runnable task) {
-    return pool.submit(task);
-  }
-
   public synchronized <T>Future<T> submit(Callable<T> task){
     return pool.submit(task);
-  }
-
-  public int getActiveCnt() {
-    return ((ThreadPoolExecutor) pool).getActiveCount();
-  }
-
-  public int getThreadCnt() {
-    return threadCnt;
   }
 
   private static class InstanceHolder {

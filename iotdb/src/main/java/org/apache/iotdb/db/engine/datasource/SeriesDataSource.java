@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.iotdb.db.engine.querycontext;
+package org.apache.iotdb.db.engine.datasource;
 
 import java.util.List;
 import org.apache.iotdb.db.engine.sgmanager.TsFileResource;
@@ -53,10 +53,6 @@ public class SeriesDataSource {
     return sealedFiles;
   }
 
-  public void setSealedFiles(List<TsFileResource> sealedFiles) {
-    this.sealedFiles = sealedFiles;
-  }
-
   public boolean hasUnsealedFile() {
     return unsealedFile != null;
   }
@@ -65,20 +61,12 @@ public class SeriesDataSource {
     return unsealedFile;
   }
 
-  public void setUnsealedFile(UnsealedTsFile unsealedFile) {
-    this.unsealedFile = unsealedFile;
-  }
-
   public boolean hasRawSeriesChunk() {
     return readableChunk != null;
   }
 
   public ReadOnlyMemChunk getReadableChunk() {
     return readableChunk;
-  }
-
-  public void setReadableChunk(ReadOnlyMemChunk readableChunk) {
-    this.readableChunk = readableChunk;
   }
 
   public Path getSeriesPath() {

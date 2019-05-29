@@ -16,18 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.iotdb.db.engine.querycontext;
+package org.apache.iotdb.db.engine.datasource;
 
-public class MergeSeriesDataSource {
+import java.util.List;
+import org.apache.iotdb.tsfile.file.metadata.ChunkMetaData;
 
-  private OverflowInsertFile insertFile;
+public class UnsealedTsFile {
 
-  public MergeSeriesDataSource(OverflowInsertFile insertFile) {
-    this.insertFile = insertFile;
+  private String filePath;
+  private List<ChunkMetaData> timeSeriesChunkMetaDatas;
+
+  public String getFilePath() {
+    return filePath;
   }
 
-  public OverflowInsertFile getInsertFile() {
-    return insertFile;
+  public void setFilePath(String filePath) {
+    this.filePath = filePath;
   }
 
+  public List<ChunkMetaData> getChunkMetaDataList() {
+    return timeSeriesChunkMetaDatas;
+  }
+
+  public void setTimeSeriesChunkMetaDatas(List<ChunkMetaData> timeSeriesChunkMetaDatas) {
+    this.timeSeriesChunkMetaDatas = timeSeriesChunkMetaDatas;
+  }
 }

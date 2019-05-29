@@ -33,53 +33,15 @@ import org.apache.iotdb.db.exception.ProcessorException;
 public class MergeManager {
 
   private ExecutorService pool;
-  private int threadCnt;
 
   private MergeManager() {
     IoTDBConfig config = IoTDBDescriptor.getInstance().getConfig();
-    this.threadCnt = config.getMergeConcurrentThreads();
+    int threadCnt = config.getMergeConcurrentThreads();
     pool = IoTDBThreadPoolFactory.newFixedThreadPool(threadCnt, ThreadName.MERGE_SERVICE.getName());
   }
 
   public static MergeManager getInstance() {
     return InstanceHolder.instance;
-  }
-
-  /**
-   * reopen function.
-   *
-   * @throws ProcessorException if the pool is not terminated.
-   */
-  public void reopen() throws ProcessorException {
-    if (!pool.isTerminated()) {
-      throw new ProcessorException("Merge pool is not terminated!");
-    }
-    IoTDBConfig config = IoTDBDescriptor.getInstance().getConfig();
-    pool = Executors.newFixedThreadPool(config.getMergeConcurrentThreads());
-  }
-
-  /**
-   * Refuse new merge submits and exit when all RUNNING THREAD in the pool end.
-   *
-   * @param block if set block to true, this method will wait for timeOut milliseconds to close the
-   * merge pool. false, return directly.
-   * @param timeOut block time out in milliseconds.
-   * @throws ProcessorException if timeOut reach or interrupted while waiting to exit.
-   */
-  public void forceClose(boolean block, long timeOut) throws ProcessorException {
-    pool.shutdownNow();
-    if (block) {
-      try {
-        if (!pool.awaitTermination(timeOut, TimeUnit.MILLISECONDS)) {
-          throw new ProcessorException(
-              "Merge thread pool doesn't exit after " + timeOut + " ms");
-        }
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new ProcessorException(
-            "Interrupted while waiting merge thread pool to exit. ", e);
-      }
-    }
   }
 
   /**
@@ -106,20 +68,8 @@ public class MergeManager {
     }
   }
 
-  public Future<?> submit(Runnable task) {
-    return pool.submit(task);
-  }
-
   public Future<?> submit(Callable task) {
     return pool.submit(task);
-  }
-
-  public int getActiveCnt() {
-    return ((ThreadPoolExecutor) pool).getActiveCount();
-  }
-
-  public int getThreadCnt() {
-    return threadCnt;
   }
 
   private static class InstanceHolder {
