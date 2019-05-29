@@ -450,7 +450,8 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
       boolean allInsert = true;
 
       for (int i = 0; i < physicalPlans.length; i++) {
-        PhysicalPlan physicalPlan = processor.parseSQLToPhysicalPlan(statements.get(i), zoneIds.get());
+        PhysicalPlan physicalPlan = processor
+            .parseSQLToPhysicalPlan(statements.get(i), zoneIds.get());
         physicalPlan.setProposer(username.get());
         physicalPlans[i] = physicalPlan;
         if (!(physicalPlan instanceof InsertPlan)) {
@@ -460,12 +461,12 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
 
       if (allInsert) {
         // execute batch insert
-        Pair<List<Integer>, String> pair = executeBatchInsert((InsertPlan[])physicalPlans);
+        Pair<List<Integer>, String> pair = executeBatchInsert((InsertPlan[]) physicalPlans);
         result = pair.left;
         // only used when having failure
         batchErrorMessage = pair.right;
         if (batchErrorMessage != null) {
-            isAllSuccessful = false;
+          isAllSuccessful = false;
         }
       } else {
         // execute one by one
@@ -509,7 +510,6 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
   }
 
   /**
-   * @param insertPlans
    * @return a list of return code and message
    */
   private Pair<List<Integer>, String> executeBatchInsert(InsertPlan[] insertPlans) {
