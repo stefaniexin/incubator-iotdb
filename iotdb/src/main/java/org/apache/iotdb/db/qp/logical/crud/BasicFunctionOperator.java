@@ -21,6 +21,7 @@ package org.apache.iotdb.db.qp.logical.crud;
 import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.qp.LogicalOperatorException;
 import org.apache.iotdb.db.qp.constant.SQLConstant;
+import org.apache.iotdb.db.qp.executor.IQueryProcessExecutor;
 import org.apache.iotdb.db.qp.executor.QueryProcessExecutor;
 import org.apache.iotdb.db.qp.logical.Operator;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
@@ -97,7 +98,7 @@ public class BasicFunctionOperator extends FunctionOperator {
 
   @Override
   protected Pair<IUnaryExpression, String> transformToSingleQueryFilter(
-      QueryProcessExecutor executor)
+      IQueryProcessExecutor executor)
       throws LogicalOperatorException, PathErrorException {
     TSDataType type = executor.getSeriesType(path);
     if (type == null) {
@@ -151,7 +152,7 @@ public class BasicFunctionOperator extends FunctionOperator {
     try {
       ret = new BasicFunctionOperator(this.tokenIntType, path.clone(), value);
     } catch (LogicalOperatorException e) {
-      logger.error("error clone:{}", e.getMessage());
+      logger.error("error clone:", e);
       return null;
     }
     ret.tokenSymbol = tokenSymbol;

@@ -34,6 +34,7 @@ public class MeanAggrFunc extends AggregateFunction {
   protected double sum = 0.0;
   private int cnt = 0;
   private TSDataType seriesDataType;
+  private static final String MEAN_AGGR_NAME = "MEAN";
 
   public MeanAggrFunc(TSDataType seriesDataType) {
     super(TSDataType.DOUBLE);
@@ -42,7 +43,7 @@ public class MeanAggrFunc extends AggregateFunction {
 
   @Override
   public void init() {
-    resultData.reSet();
+    resultData.reset();
     sum = 0.0;
     cnt = 0;
   }
@@ -122,7 +123,8 @@ public class MeanAggrFunc extends AggregateFunction {
       case TEXT:
       case BOOLEAN:
       default:
-        throw new IOException("Unsupported data type in aggregation MEAN : " + type);
+        throw new IOException(
+            String.format("Unsupported data type in aggregation %s : %s", getAggreTypeName(), type));
     }
     cnt++;
   }
@@ -159,5 +161,12 @@ public class MeanAggrFunc extends AggregateFunction {
   @Override
   public boolean isCalculatedAggregationResult() {
     return false;
+  }
+
+  /**
+   * Return type name of aggregation
+   */
+  public String getAggreTypeName() {
+    return MEAN_AGGR_NAME;
   }
 }

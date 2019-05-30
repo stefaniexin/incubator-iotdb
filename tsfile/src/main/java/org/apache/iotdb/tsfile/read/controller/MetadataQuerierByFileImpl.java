@@ -20,6 +20,7 @@ package org.apache.iotdb.tsfile.read.controller;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -27,7 +28,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import org.apache.iotdb.tsfile.common.cache.LRUCache;
-import org.apache.iotdb.tsfile.common.constant.QueryConstant;
 import org.apache.iotdb.tsfile.exception.write.NoMeasurementException;
 import org.apache.iotdb.tsfile.file.metadata.ChunkGroupMetaData;
 import org.apache.iotdb.tsfile.file.metadata.ChunkMetaData;
@@ -37,6 +37,7 @@ import org.apache.iotdb.tsfile.file.metadata.TsFileMetaData;
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType;
 import org.apache.iotdb.tsfile.read.TsFileSequenceReader;
 import org.apache.iotdb.tsfile.read.common.Path;
+import org.apache.iotdb.tsfile.read.common.TimeRange;
 import org.apache.iotdb.tsfile.write.schema.MeasurementSchema;
 
 public class MetadataQuerierByFileImpl implements MetadataQuerier {
@@ -49,41 +50,12 @@ public class MetadataQuerierByFileImpl implements MetadataQuerier {
 
   private TsFileSequenceReader tsFileReader;
 
-  private boolean partitionMode = false;
-  private long partitionStartOffset;
-  private long partitionEndOffset;
-
   /**
    * Constructor of MetadataQuerierByFileImpl.
    */
   public MetadataQuerierByFileImpl(TsFileSequenceReader tsFileReader) throws IOException {
     this.tsFileReader = tsFileReader;
     this.fileMetaData = tsFileReader.readFileMetadata();
-    this.partitionMode = false;
-    chunkMetaDataCache = new LRUCache<Path, List<ChunkMetaData>>(CHUNK_METADATA_CACHE_SIZE) {
-      @Override
-      public List<ChunkMetaData> loadObjectByKey(Path key) throws IOException {
-        return loadChunkMetadata(key);
-      }
-    };
-  }
-
-  /**
-   * Constructor of MetadataQuerierByFileImpl.
-   */
-  public MetadataQuerierByFileImpl(TsFileSequenceReader tsFileReader, HashMap<String, Long> params)
-      throws IOException {
-    this.tsFileReader = tsFileReader;
-    this.fileMetaData = tsFileReader.readFileMetadata();
-
-    if (!params.containsKey(QueryConstant.PARTITION_START_OFFSET) || !params
-        .containsKey(QueryConstant.PARTITION_END_OFFSET)) {
-      throw new IllegalArgumentException(
-          "Input parameters miss partition_start_offset or partition_end_offset");
-    }
-    this.partitionMode = true;
-    this.partitionStartOffset = params.get(QueryConstant.PARTITION_START_OFFSET);
-    this.partitionEndOffset = params.get(QueryConstant.PARTITION_END_OFFSET);
     chunkMetaDataCache = new LRUCache<Path, List<ChunkMetaData>>(CHUNK_METADATA_CACHE_SIZE) {
       @Override
       public List<ChunkMetaData> loadObjectByKey(Path key) throws IOException {
@@ -95,6 +67,18 @@ public class MetadataQuerierByFileImpl implements MetadataQuerier {
   @Override
   public List<ChunkMetaData> getChunkMetaDataList(Path path) throws IOException {
     return chunkMetaDataCache.get(path);
+  }
+
+  @Override
+  public Map<Path, List<ChunkMetaData>> getChunkMetaDataMap(List<Path> paths) throws IOException {
+    Map<Path, List<ChunkMetaData>> chunkMetaDatas = new HashMap<>();
+    for (Path path : paths) {
+      if (!chunkMetaDatas.containsKey(path)) {
+        chunkMetaDatas.put(path, new ArrayList<>());
+      }
+      chunkMetaDatas.get(path).addAll(getChunkMetaDataList(path));
+    }
+    return chunkMetaDatas;
   }
 
   @Override
@@ -137,16 +121,13 @@ public class MetadataQuerierByFileImpl implements MetadataQuerier {
 
       // d1
       for (ChunkGroupMetaData chunkGroupMetaData : tsDeviceMetadata
-          .getChunkGroupMetaDataList()) { // TODO make this function
+          .getChunkGroupMetaDataList()) {
         // better
 
         if (enough) {
           break;
         }
 
-        if (!checkAccess(chunkGroupMetaData)) {
-          continue;
-        }
         // s1, s2
         for (ChunkMetaData chunkMetaData : chunkGroupMetaData.getChunkMetaDataList()) {
 
@@ -182,9 +163,9 @@ public class MetadataQuerierByFileImpl implements MetadataQuerier {
   }
 
   @Override
-  public TSDataType getDataType(String measurement) throws NoMeasurementException  {
+  public TSDataType getDataType(String measurement) throws NoMeasurementException {
     MeasurementSchema measurementSchema = fileMetaData.getMeasurementSchema().get(measurement);
-    if(measurementSchema != null) {
+    if (measurementSchema != null) {
       return measurementSchema.getType();
     }
     throw new NoMeasurementException(String.format("%s not found.", measurement));
@@ -205,9 +186,6 @@ public class MetadataQuerierByFileImpl implements MetadataQuerier {
     // get all ChunkMetaData of this path included in all ChunkGroups of this device
     List<ChunkMetaData> chunkMetaDataList = new ArrayList<>();
     for (ChunkGroupMetaData chunkGroupMetaData : tsDeviceMetadata.getChunkGroupMetaDataList()) {
-      if (!checkAccess(chunkGroupMetaData)) {
-        continue;
-      }
       List<ChunkMetaData> chunkMetaDataListInOneChunkGroup = chunkGroupMetaData
           .getChunkMetaDataList();
       for (ChunkMetaData chunkMetaData : chunkMetaDataListInOneChunkGroup) {
@@ -220,19 +198,108 @@ public class MetadataQuerierByFileImpl implements MetadataQuerier {
     return chunkMetaDataList;
   }
 
-  private boolean checkAccess(ChunkGroupMetaData chunkGroupMetaData) {
-    if (!partitionMode) {
-      return true; // always true
+  @Override
+  public List<TimeRange> convertSpace2TimePartition(List<Path> paths, long spacePartitionStartPos,
+      long spacePartitionEndPos) throws IOException {
+    if (spacePartitionStartPos > spacePartitionEndPos) {
+      throw new IllegalArgumentException(
+          "'spacePartitionStartPos' should not be larger than 'spacePartitionEndPos'.");
     }
+
+    // (1) get timeRangesInCandidates and timeRangesBeforeCandidates by iterating through the metadata
+    ArrayList<TimeRange> timeRangesInCandidates = new ArrayList<>();
+    ArrayList<TimeRange> timeRangesBeforeCandidates = new ArrayList<>();
+
+    // group measurements by device
+    TreeMap<String, Set<String>> deviceMeasurementsMap = new TreeMap<>();
+    for (Path path : paths) {
+      if (!deviceMeasurementsMap.containsKey(path.getDevice())) {
+        deviceMeasurementsMap.put(path.getDevice(), new HashSet<>());
+      }
+      deviceMeasurementsMap.get(path.getDevice()).add(path.getMeasurement());
+    }
+    for (Map.Entry<String, Set<String>> deviceMeasurements : deviceMeasurementsMap.entrySet()) {
+      String selectedDevice = deviceMeasurements.getKey();
+      Set<String> selectedMeasurements = deviceMeasurements.getValue();
+
+      TsDeviceMetadataIndex index = fileMetaData.getDeviceMetadataIndex(selectedDevice);
+      TsDeviceMetadata tsDeviceMetadata = tsFileReader.readTsDeviceMetaData(index);
+
+      for (ChunkGroupMetaData chunkGroupMetaData : tsDeviceMetadata
+          .getChunkGroupMetaDataList()) {
+        LocateStatus mode = checkLocateStatus(chunkGroupMetaData, spacePartitionStartPos,
+            spacePartitionEndPos);
+        if (mode == LocateStatus.after) {
+          continue;
+        }
+        for (ChunkMetaData chunkMetaData : chunkGroupMetaData.getChunkMetaDataList()) {
+          String currentMeasurement = chunkMetaData.getMeasurementUid();
+          if (selectedMeasurements.contains(currentMeasurement)) {
+            TimeRange timeRange = new TimeRange(chunkMetaData.getStartTime(),
+                chunkMetaData.getEndTime());
+            if (mode == LocateStatus.in) {
+              timeRangesInCandidates.add(timeRange);
+            } else {
+              timeRangesBeforeCandidates.add(timeRange);
+            }
+          }
+        }
+      }
+    }
+
+    // (2) sort and merge the timeRangesInCandidates
+    ArrayList<TimeRange> timeRangesIn = new ArrayList<>(
+        TimeRange.sortAndMerge(timeRangesInCandidates));
+    if (timeRangesIn.isEmpty()) {
+      return Collections.emptyList(); // return an empty list
+    }
+
+    // (3) sort and merge the timeRangesBeforeCandidates
+    ArrayList<TimeRange> timeRangesBefore = new ArrayList<>(
+        TimeRange.sortAndMerge(timeRangesBeforeCandidates));
+
+    // (4) calculate the remaining time ranges
+    List<TimeRange> resTimeRanges = new ArrayList<>();
+    for (TimeRange in : timeRangesIn) {
+      ArrayList<TimeRange> remains = new ArrayList<>(in.getRemains(timeRangesBefore));
+      resTimeRanges.addAll(remains);
+    }
+
+    return resTimeRanges;
+  }
+
+  /**
+   * Check the location of a given chunkGroupMetaData with respect to a space partition constraint.
+   *
+   * @param chunkGroupMetaData the given chunkGroupMetaData
+   * @param spacePartitionStartPos the start position of the space partition
+   * @param spacePartitionEndPos the end position of the space partition
+   * @return LocateStatus
+   */
+  private LocateStatus checkLocateStatus(ChunkGroupMetaData chunkGroupMetaData,
+      long spacePartitionStartPos, long spacePartitionEndPos) {
     long startOffsetOfChunkGroup = chunkGroupMetaData.getStartOffsetOfChunkGroup();
     long endOffsetOfChunkGroup = chunkGroupMetaData.getEndOffsetOfChunkGroup();
     long middleOffsetOfChunkGroup = (startOffsetOfChunkGroup + endOffsetOfChunkGroup) / 2;
-    if (partitionStartOffset < middleOffsetOfChunkGroup
-        && middleOffsetOfChunkGroup <= partitionEndOffset) {
-      return true;
+    if (spacePartitionStartPos <= middleOffsetOfChunkGroup
+        && middleOffsetOfChunkGroup < spacePartitionEndPos) {
+      return LocateStatus.in;
+    } else if (middleOffsetOfChunkGroup < spacePartitionStartPos) {
+      return LocateStatus.before;
     } else {
-      return false;
+      return LocateStatus.after;
     }
   }
 
+  /**
+   * The location of a chunkGroupMetaData with respect to a space partition constraint.
+   *
+   * in - the middle point of the chunkGroupMetaData is located in the current space partition.
+   * before - the middle point of the chunkGroupMetaData is located before the current space
+   * partition. after - the middle point of the chunkGroupMetaData is located after the current
+   * space partition.
+   */
+  private enum LocateStatus {
+    in, before, after
+  }
 }

@@ -26,6 +26,7 @@ import org.apache.iotdb.db.exception.PathErrorException;
 import org.apache.iotdb.db.exception.qp.LogicalOperatorException;
 import org.apache.iotdb.db.exception.qp.LogicalOptimizeException;
 import org.apache.iotdb.db.qp.constant.SQLConstant;
+import org.apache.iotdb.db.qp.executor.IQueryProcessExecutor;
 import org.apache.iotdb.db.qp.executor.QueryProcessExecutor;
 import org.apache.iotdb.db.qp.logical.Operator;
 import org.apache.iotdb.db.qp.logical.crud.BasicFunctionOperator;
@@ -46,9 +47,9 @@ public class ConcatPathOptimizer implements ILogicalOptimizer {
   private static final Logger LOG = LoggerFactory.getLogger(ConcatPathOptimizer.class);
   private static final String WARNING_NO_SUFFIX_PATHS = "given SFWOperator doesn't have suffix paths, cannot concat seriesPath";
 
-  private QueryProcessExecutor executor;
+  private IQueryProcessExecutor executor;
 
-  public ConcatPathOptimizer(QueryProcessExecutor executor) {
+  public ConcatPathOptimizer(IQueryProcessExecutor executor) {
     this.executor = executor;
   }
 
@@ -305,8 +306,7 @@ public class ConcatPathOptimizer implements ILogicalOptimizer {
             new BasicFunctionOperator(operator.getTokenIntType(), noStarPaths.get(i),
                 ((BasicFunctionOperator) operator).getValue()));
       } catch (LogicalOperatorException e) {
-        LOG.error("meet error while adding child operator to current node.", e);
-        throw new LogicalOptimizeException(e.getMessage());
+        throw new LogicalOptimizeException(e);
       }
     }
     return filterTwoFolkTree;
@@ -335,8 +335,7 @@ public class ConcatPathOptimizer implements ILogicalOptimizer {
         retPaths.add(new Path(pathStr));
       }
     } catch (PathErrorException e) {
-      LOG.error("meet error while removing star.", e);
-      throw new LogicalOptimizeException("error when remove star: " + e.getMessage());
+      throw new LogicalOptimizeException("error when remove star: ", e);
     }
     return retPaths;
   }
@@ -355,8 +354,7 @@ public class ConcatPathOptimizer implements ILogicalOptimizer {
           }
         }
       } catch (PathErrorException e) {
-        LOG.error("meet error while removing star.", e);
-        throw new LogicalOptimizeException("error when remove star: " + e.getMessage());
+        throw new LogicalOptimizeException("error when remove star: ", e);
       }
     }
     if (retPaths.isEmpty()) {
