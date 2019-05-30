@@ -678,7 +678,19 @@ public class TSServiceImpl implements TSIService.Iface, ServerContext {
       } else {
         queryDataSet = queryRet.get().get(statement);
       }
-      TSQueryDataSet result = Utils.convertQueryDataSetByFetchSize(queryDataSet, fetchSize);
+
+      IAuthorizer authorizer;
+      try {
+        authorizer = LocalFileAuthorizer.getInstance();
+      } catch (AuthException e) {
+        throw new TException(e);
+      }
+      TSQueryDataSet result;
+      if (authorizer.isUserUseWaterMark(username.get())) {
+        result = Utils.convertQueryDataSetByFetchSize(queryDataSet, fetchSize, config);
+      } else {
+        result = Utils.convertQueryDataSetByFetchSize(queryDataSet, fetchSize);
+      }
       boolean hasResultSet = !result.getRecords().isEmpty();
       if (!hasResultSet && queryRet.get() != null) {
         queryRet.get().remove(statement);
