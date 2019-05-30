@@ -251,6 +251,18 @@ public class IoTDBDescriptor {
             conf.getZoneID(), e);
       }
 
+      conf.setEnableWatermark(Boolean.parseBoolean(properties.getProperty(
+          "watermark_module_opened",
+          Boolean.toString(conf.isEnableWatermark()).trim())));
+
+      conf.setWatermarkSecretKey(properties.getProperty(
+          "watermark_secret_key",
+          conf.getWatermarkSecretKey()));
+
+      conf.setWatermarkBitString(properties.getProperty(
+          "watermark_bit_string",
+          conf.getWatermarkBitString()));
+
     } catch (IOException e) {
       LOGGER.warn("Cannot load config file because, use default configuration", e);
     } catch (Exception e) {

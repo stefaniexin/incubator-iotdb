@@ -4,9 +4,9 @@
  * copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with the License.  You may obtain
  * a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software distributed under the License
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied.  See the License for the specific language governing permissions and limitations
@@ -18,6 +18,10 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.iotdb.db.auth.authorizer.LocalFileAuthorizer;
+import org.apache.iotdb.db.conf.IoTDBConfig;
+import org.apache.iotdb.db.tools.WatermarkEncoder;
 import org.apache.iotdb.service.rpc.thrift.TSDataValue;
 import org.apache.iotdb.service.rpc.thrift.TSQueryDataSet;
 import org.apache.iotdb.service.rpc.thrift.TSRowRecord;
@@ -31,7 +35,8 @@ import org.apache.iotdb.tsfile.read.query.dataset.QueryDataSet;
  */
 public class Utils {
 
-  private Utils(){}
+  private Utils() {
+  }
 
   /**
    * convert query data set by fetch size.
@@ -41,13 +46,26 @@ public class Utils {
    * @return -convert query dataset
    */
   public static TSQueryDataSet convertQueryDataSetByFetchSize(QueryDataSet queryDataSet,
-      int fetchsize)
+                                                              int fetchsize)
+      throws IOException {
+    return convertQueryDataSetByFetchSize(queryDataSet, fetchsize, null);
+  }
+
+  public static TSQueryDataSet convertQueryDataSetByFetchSize(QueryDataSet queryDataSet,
+                                                              int fetchsize, IoTDBConfig conf)
       throws IOException {
     TSQueryDataSet tsQueryDataSet = new TSQueryDataSet();
     tsQueryDataSet.setRecords(new ArrayList<>());
+    WatermarkEncoder watermarkEncoder = null;
+    if (conf != null && conf.isEnableWatermark() && LocalFileAuthorizer.getInstance()) {
+      watermarkEncoder = new WatermarkEncoder(conf.getWatermarkSecretKey(), conf.getWatermarkBitString());
+    }
     for (int i = 0; i < fetchsize; i++) {
       if (queryDataSet.hasNext()) {
         RowRecord rowRecord = queryDataSet.next();
+        if (watermarkEncoder != null) {
+          rowRecord = watermarkEncoder.encodeRecord(rowRecord);
+        }
         tsQueryDataSet.getRecords().add(convertToTSRecord(rowRecord));
       } else {
         break;
