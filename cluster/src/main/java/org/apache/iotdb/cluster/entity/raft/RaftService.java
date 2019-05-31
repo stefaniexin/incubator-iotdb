@@ -47,11 +47,11 @@ public class RaftService implements IService {
 
   public RaftService(String groupId, PeerId[] peerIds, PeerId serverId, RpcServer rpcServer, StateMachine fsm, boolean startRpcServer) {
     this.peerIdList = new ArrayList<>(peerIds.length);
-    peerIdList.addAll(Arrays.asList(peerIds));
+    this.peerIdList.addAll(Arrays.asList(peerIds));
     this.fsm = fsm;
     this.groupId = groupId;
     this.startRpcServer = startRpcServer;
-    raftGroupService = new RaftGroupService(groupId, serverId, null, rpcServer);
+    this.raftGroupService = new RaftGroupService(groupId, serverId, null, rpcServer);
   }
 
   @Override
