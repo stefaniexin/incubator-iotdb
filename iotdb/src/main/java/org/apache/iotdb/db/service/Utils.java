@@ -19,7 +19,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.iotdb.db.auth.authorizer.LocalFileAuthorizer;
 import org.apache.iotdb.db.conf.IoTDBConfig;
 import org.apache.iotdb.db.tools.WatermarkEncoder;
 import org.apache.iotdb.service.rpc.thrift.TSDataValue;
@@ -57,7 +56,7 @@ public class Utils {
     TSQueryDataSet tsQueryDataSet = new TSQueryDataSet();
     tsQueryDataSet.setRecords(new ArrayList<>());
     WatermarkEncoder watermarkEncoder = null;
-    if (conf != null && conf.isEnableWatermark() && LocalFileAuthorizer.getInstance()) {
+    if (conf != null && conf.isEnableWatermark()) {
       watermarkEncoder = new WatermarkEncoder(conf.getWatermarkSecretKey(), conf.getWatermarkBitString());
     }
     for (int i = 0; i < fetchsize; i++) {
