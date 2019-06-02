@@ -40,6 +40,7 @@ import org.apache.iotdb.db.metadata.MManager;
 import org.apache.iotdb.db.metadata.MNode;
 import org.apache.iotdb.db.monitor.MonitorConstants;
 import org.apache.iotdb.db.qp.constant.SQLConstant;
+import org.apache.iotdb.db.qp.logical.Operator.OperatorType;
 import org.apache.iotdb.db.qp.logical.sys.AuthorOperator;
 import org.apache.iotdb.db.qp.logical.sys.MetadataOperator;
 import org.apache.iotdb.db.qp.logical.sys.PropertyOperator;
@@ -48,6 +49,7 @@ import org.apache.iotdb.db.qp.physical.crud.DeletePlan;
 import org.apache.iotdb.db.qp.physical.crud.InsertPlan;
 import org.apache.iotdb.db.qp.physical.crud.UpdatePlan;
 import org.apache.iotdb.db.qp.physical.sys.AuthorPlan;
+import org.apache.iotdb.db.qp.physical.sys.DataAuthPlan;
 import org.apache.iotdb.db.qp.physical.sys.LoadDataPlan;
 import org.apache.iotdb.db.qp.physical.sys.MetadataPlan;
 import org.apache.iotdb.db.qp.physical.sys.PropertyPlan;
@@ -140,6 +142,10 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
       case LIST_USER_ROLES:
         AuthorPlan author = (AuthorPlan) plan;
         return operateAuthor(author);
+      case GRANT_DATA_AUTH:
+      case REVOKE_DATA_AUTH:
+        DataAuthPlan dataAuthPlan = (DataAuthPlan) plan;
+        return operateDataAuth(dataAuthPlan);
       case LOADDATA:
         LoadDataPlan loadData = (LoadDataPlan) plan;
         LoadDataUtils load = new LoadDataUtils();
@@ -302,6 +308,23 @@ public class OverflowQPExecutor extends QueryProcessExecutor {
   @Override
   public List<String> getAllPaths(String originPath) throws PathErrorException {
     return MManager.getInstance().getPaths(originPath);
+  }
+
+  private boolean operateDataAuth(DataAuthPlan plan) throws ProcessorException {
+    try {
+      if (plan.getOperatorType() == OperatorType.GRANT_DATA_AUTH) {
+        for (String user : plan.getUsers()) {
+          LocalFileAuthorizer.getInstance().setUserUseWaterMark(user, true);
+        }
+      } else {
+        for (String user : plan.getUsers()) {
+          LocalFileAuthorizer.getInstance().setUserUseWaterMark(user, false);
+        }
+      }
+    } catch (AuthException e) {
+      throw new ProcessorException("Grant or Revoke user data authority failed, because " + e.getMessage());
+    }
+    return true;
   }
 
   private boolean operateAuthor(AuthorPlan author) throws ProcessorException {
