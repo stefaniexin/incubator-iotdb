@@ -906,4 +906,13 @@ public class IoTDBConfig {
     }
     return null;
   }
+
+  public void setWatermarkMethod(String watermarkMethod) {
+    this.watermarkMethod = watermarkMethod;
+  }
+
+  public String getWatermarkMethodValue() {
+    return this.watermarkMethod;
+  }
+
 }
